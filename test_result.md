@@ -350,16 +350,19 @@ frontend:
         comment: "USER FEEDBACK: Dashboard counts don't update when new services or providers are added. Need to investigate and fix data refresh mechanism."
 
   - task: "AI-Driven Category Selection"
-    implemented: false
-    working: false
-    file: "/app/frontend/src/components/ServiceRequestForm.js"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "main"
         comment: "USER REQUEST: Replace manual category selection with AI-powered category selection using title and description. Requires Emergent LLM integration."
+      - working: true
+        agent: "testing"
+        comment: "✅ AI-Driven Category Selection working excellently! Comprehensive testing completed: ✅ Clear descriptions test (5/5 passed) - correctly categorized kitchen sink → Home Services, website development → Technology & IT, logo design → Creative & Design, kitchen renovation → Construction & Renovation, legal consultation → Professional Services. ✅ Edge cases handled properly - empty/short/ambiguous descriptions appropriately categorized as 'Other' with low confidence. ✅ Input validation working (422 errors for missing fields). ✅ AI integration fully functional (5/5 high-confidence responses) using EMERGENT_LLM_KEY. ✅ JSON structure correct with selected_category, confidence level, and fallback_reason fields. All test scenarios from review request passed successfully."
 
   - task: "Form Field Reordering"
     implemented: false
