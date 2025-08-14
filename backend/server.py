@@ -243,9 +243,14 @@ class BidMessageCreate(BaseModel):
 class LocationRecommendationRequest(BaseModel):
     service_category: str
     description: str
+    title: Optional[str] = None
+    budget_min: Optional[float] = None
+    budget_max: Optional[float] = None
+    deadline: Optional[str] = None
     location: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    urgency_level: Optional[str] = None
 
 class ServiceProvider(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
