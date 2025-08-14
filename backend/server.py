@@ -213,6 +213,9 @@ class Bid(BaseModel):
     provider_name: str
     price: float
     proposal: str
+    start_date: Optional[datetime] = None
+    duration_days: Optional[int] = None
+    duration_description: Optional[str] = None
     status: str = "pending"  # pending, accepted, rejected
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
