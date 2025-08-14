@@ -507,6 +507,15 @@ const ManageRequests = () => {
                     <span className="text-sm">Make best bids visible to other bidders</span>
                   </label>
                 </div>
+
+                <div className="form-group">
+                  <label className="form-label">Images</label>
+                  <ImageUpload 
+                    images={editingRequest.images || []}
+                    setImages={(images) => setEditingRequest({...editingRequest, images})}
+                    maxImages={5}
+                  />
+                </div>
               </div>
               
               <div className="modal-footer">
