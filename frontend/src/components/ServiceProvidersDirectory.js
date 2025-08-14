@@ -28,7 +28,7 @@ const ServiceProvidersDirectory = () => {
   const fetchData = async () => {
     try {
       const [providersResponse, categoriesResponse] = await Promise.all([
-        axios.get(`${API}/service-providers?limit=100`),
+        axios.get(`${API}/service-providers?limit=500`), // Increased to 500 to show hundreds
         axios.get(`${API}/categories`)
       ]);
 
