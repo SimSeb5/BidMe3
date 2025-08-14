@@ -80,7 +80,7 @@ const PublicHome = () => {
               Get Started
             </Link>
             <Link to="/services" className="btn btn-secondary btn-large">
-              Browse Services
+              Browse Projects
             </Link>
           </div>
         </div>
