@@ -10,179 +10,164 @@ const Navigation = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="nav">
-      <div className="nav-container">
-        <Link to="/" className="nav-brand">
+    <nav className="nav-clean">
+      <div className="nav-container-clean">
+        <Link to="/" className="nav-brand-clean">
+          <span className="brand-icon">⚡</span>
           ServiceConnect
         </Link>
         
         {/* Mobile menu button */}
         <button 
-          className="md:hidden btn btn-outline p-2"
+          className="mobile-menu-btn"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
         
         {/* Desktop navigation */}
-        <ul className="nav-links hidden md:flex">
-          <li>
-            <Link 
-              to="/" 
-              className={`nav-link ${isActive('/') ? 'active' : ''}`}
-            >
-              Dashboard
-            </Link>
-          </li>
+        <div className="nav-links-clean">
+          <Link 
+            to="/" 
+            className={`nav-link-clean ${isActive('/') ? 'active' : ''}`}
+          >
+            Dashboard
+          </Link>
           
           {user?.role === 'customer' && (
             <>
-              <li>
-                <Link 
-                  to="/request-service" 
-                  className={`nav-link ${isActive('/request-service') ? 'active' : ''}`}
-                >
-                  Request Service
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/my-requests" 
-                  className={`nav-link ${isActive('/my-requests') ? 'active' : ''}`}
-                >
-                  My Requests
-                </Link>
-              </li>
+              <Link 
+                to="/request-service" 
+                className={`nav-link-clean ${isActive('/request-service') ? 'active' : ''}`}
+              >
+                Post Request
+              </Link>
+              <Link 
+                to="/my-requests" 
+                className={`nav-link-clean ${isActive('/my-requests') ? 'active' : ''}`}
+              >
+                My Requests
+              </Link>
             </>
           )}
           
           {user?.role === 'provider' && (
             <>
-              <li>
-                <Link 
-                  to="/my-bids" 
-                  className={`nav-link ${isActive('/my-bids') ? 'active' : ''}`}
-                >
-                  My Bids
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/profile" 
-                  className={`nav-link ${isActive('/profile') ? 'active' : ''}`}
-                >
-                  Profile
-                </Link>
-              </li>
+              <Link 
+                to="/my-bids" 
+                className={`nav-link-clean ${isActive('/my-bids') ? 'active' : ''}`}
+              >
+                My Proposals
+              </Link>
+              <Link 
+                to="/profile" 
+                className={`nav-link-clean ${isActive('/profile') ? 'active' : ''}`}
+              >
+                Profile
+              </Link>
             </>
           )}
           
-          <li>
-            <Link 
-              to="/services" 
-              className={`nav-link ${isActive('/services') ? 'active' : ''}`}
-            >
-              Browse Services
-            </Link>
-          </li>
+          <Link 
+            to="/services" 
+            className={`nav-link-clean ${isActive('/services') ? 'active' : ''}`}
+          >
+            Browse
+          </Link>
           
-          <li>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600 hidden lg:block">
-                Welcome, {user?.first_name}!
+          <div className="nav-user-clean">
+            <div className="user-info">
+              <span className="user-name">{user?.first_name}</span>
+              <span className={`user-role ${user?.role}`}>
+                {user?.role === 'provider' ? 'Pro' : 'Client'}
               </span>
-              <span className={`badge ${user?.role === 'provider' ? 'badge-in-progress' : 'badge-open'}`}>
-                {user?.role}
-              </span>
-              <button 
-                onClick={logout} 
-                className="btn btn-outline text-sm py-2 px-3"
-              >
-                Logout
-              </button>
             </div>
-          </li>
-        </ul>
+            <button 
+              onClick={logout} 
+              className="logout-btn"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+          </div>
+        </div>
         
         {/* Mobile navigation menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden w-full bg-white border-t border-gray-200 py-4">
-            <div className="flex flex-col gap-2">
-              <Link 
-                to="/" 
-                className={`nav-link ${isActive('/') ? 'active' : ''}`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
-              
-              {user?.role === 'customer' && (
-                <>
-                  <Link 
-                    to="/request-service" 
-                    className={`nav-link ${isActive('/request-service') ? 'active' : ''}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Request Service
-                  </Link>
-                  <Link 
-                    to="/my-requests" 
-                    className={`nav-link ${isActive('/my-requests') ? 'active' : ''}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    My Requests
-                  </Link>
-                </>
-              )}
-              
-              {user?.role === 'provider' && (
-                <>
-                  <Link 
-                    to="/my-bids" 
-                    className={`nav-link ${isActive('/my-bids') ? 'active' : ''}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    My Bids
-                  </Link>
-                  <Link 
-                    to="/profile" 
-                    className={`nav-link ${isActive('/profile') ? 'active' : ''}`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Profile
-                  </Link>
-                </>
-              )}
-              
-              <Link 
-                to="/services" 
-                className={`nav-link ${isActive('/services') ? 'active' : ''}`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Browse Services
-              </Link>
-              
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200 mt-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">
-                    {user?.first_name}
-                  </span>
-                  <span className={`badge ${user?.role === 'provider' ? 'badge-in-progress' : 'badge-open'}`}>
-                    {user?.role}
-                  </span>
-                </div>
-                <button 
-                  onClick={() => {
-                    logout();
-                    setMobileMenuOpen(false);
-                  }} 
-                  className="btn btn-outline text-sm py-2 px-3"
+          <div className="mobile-menu">
+            <Link 
+              to="/" 
+              className={`mobile-link ${isActive('/') ? 'active' : ''}`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Dashboard
+            </Link>
+            
+            {user?.role === 'customer' && (
+              <>
+                <Link 
+                  to="/request-service" 
+                  className={`mobile-link ${isActive('/request-service') ? 'active' : ''}`}
+                  onClick={() => setMobileMenuOpen(false)}
                 >
-                  Logout
-                </button>
+                  Post Request
+                </Link>
+                <Link 
+                  to="/my-requests" 
+                  className={`mobile-link ${isActive('/my-requests') ? 'active' : ''}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  My Requests
+                </Link>
+              </>
+            )}
+            
+            {user?.role === 'provider' && (
+              <>
+                <Link 
+                  to="/my-bids" 
+                  className={`mobile-link ${isActive('/my-bids') ? 'active' : ''}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  My Proposals
+                </Link>
+                <Link 
+                  to="/profile" 
+                  className={`mobile-link ${isActive('/profile') ? 'active' : ''}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Profile
+                </Link>
+              </>
+            )}
+            
+            <Link 
+              to="/services" 
+              className={`mobile-link ${isActive('/services') ? 'active' : ''}`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Browse
+            </Link>
+            
+            <div className="mobile-user-info">
+              <div className="mobile-user-details">
+                <span className="mobile-user-name">{user?.first_name}</span>
+                <span className={`mobile-user-role ${user?.role}`}>
+                  {user?.role === 'provider' ? 'Professional' : 'Customer'}
+                </span>
               </div>
+              <button 
+                onClick={() => {
+                  logout();
+                  setMobileMenuOpen(false);
+                }} 
+                className="mobile-logout-btn"
+              >
+                Logout
+              </button>
             </div>
           </div>
         )}
