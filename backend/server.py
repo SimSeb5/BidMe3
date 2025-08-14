@@ -308,7 +308,7 @@ async def get_service_requests(category: Optional[str] = None, status: Optional[
         bid_count = await db.bids.count_documents({"service_request_id": request["id"]})
         request["bid_count"] = bid_count
     
-    return requests
+    return serialize_mongo_doc(requests)
 
 @api_router.get("/service-requests/{request_id}")
 async def get_service_request(request_id: str):
