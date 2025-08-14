@@ -20,7 +20,7 @@ import PublicHome from './components/PublicHome';
 import RoleManager from './components/RoleManager';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const API = `${BACKEND_URL}`;
 
 // Auth Context
 export const AuthContext = React.createContext();
