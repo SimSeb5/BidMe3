@@ -188,6 +188,28 @@ const ServiceRequestDetail = () => {
                   <p className="text-gray-700 leading-relaxed">{request.description}</p>
                 </div>
               </div>
+
+              {/* Images Section */}
+              {request.images && request.images.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-semibold text-lg mb-3">📷 Project Images ({request.images.length})</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {request.images.map((image, index) => (
+                      <div 
+                        key={index} 
+                        className="image-thumbnail cursor-pointer"
+                        onClick={() => setSelectedImageIndex(index)}
+                      >
+                        <img 
+                          src={image} 
+                          alt={`Project image ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg border hover:border-blue-400 hover:shadow-md transition-all"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               {canBid && !userBid && (
                 <div className="text-center">
