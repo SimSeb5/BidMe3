@@ -23,6 +23,13 @@ const PublicNavigation = () => {
           </Link>
           
           <Link 
+            to="/services" 
+            className={`nav-link-clean ${isActive('/services') ? 'active' : ''}`}
+          >
+            Browse Services
+          </Link>
+          
+          <Link 
             to="/providers" 
             className={`nav-link-clean ${isActive('/providers') ? 'active' : ''}`}
           >
