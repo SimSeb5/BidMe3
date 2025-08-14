@@ -112,17 +112,33 @@ const ServiceRequestForm = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
+    const newFormData = {
       ...formData,
       [name]: type === 'checkbox' ? checked : value
-    });
+    };
+    setFormData(newFormData);
+
+    // Trigger AI category selection when both title and description are available
+    if ((name === 'title' || name === 'description') && !aiCategorySelected) {
+      const title = name === 'title' ? value : formData.title;
+      const description = name === 'description' ? value : formData.description;
+      
+      if (title.trim() && description.trim() && title.trim().length > 5 && description.trim().length > 10) {
+        // Debounce the AI call
+        setTimeout(() => {
+          getAiCategorySelection(title, description);
+        }, 1000);
+      }
+    }
 
     // Show AI recommendations when we have enough info
-    if ((name === 'category' || name === 'description') && 
-        formData.category && formData.description && 
-        (name === 'category' ? value : formData.category) &&
-        (name === 'description' ? value : formData.description)) {
+    if (newFormData.category && newFormData.description) {
       setShowRecommendations(true);
+    }
+
+    // If user manually changes category, don't auto-select again
+    if (name === 'category' && value !== '') {
+      setAiCategorySelected(true);
     }
   };
 
