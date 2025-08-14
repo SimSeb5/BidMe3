@@ -9,6 +9,12 @@ const Navigation = () => {
 
   const isActive = (path) => location.pathname === path;
 
+  // Support both old and new role systems
+  const userRoles = user?.roles || [user?.role];
+  const isCustomer = userRoles.includes('customer');
+  const isProvider = userRoles.includes('provider');
+  const primaryRole = isProvider ? 'provider' : 'customer';
+
   return (
     <nav className="nav-clean">
       <div className="nav-container-clean">
@@ -36,7 +42,7 @@ const Navigation = () => {
             Dashboard
           </Link>
           
-          {user?.role === 'customer' && (
+          {isCustomer && (
             <>
               <Link 
                 to="/request-service" 
@@ -53,7 +59,7 @@ const Navigation = () => {
             </>
           )}
           
-          {user?.role === 'provider' && (
+          {isProvider && (
             <>
               <Link 
                 to="/my-bids" 
@@ -80,9 +86,18 @@ const Navigation = () => {
           <div className="nav-user-clean">
             <div className="user-info">
               <span className="user-name">{user?.first_name}</span>
-              <span className={`user-role ${user?.role}`}>
-                {user?.role === 'provider' ? 'Pro' : 'Client'}
-              </span>
+              <div className="user-roles">
+                {userRoles.map((role) => (
+                  <span key={role} className={`user-role ${role}`}>
+                    {role === 'provider' ? 'Pro' : 'Client'}
+                  </span>
+                ))}
+                {userRoles.length === 1 && (
+                  <Link to="/manage-roles" className="add-role-btn">
+                    +
+                  </Link>
+                )}
+              </div>
             </div>
             <button 
               onClick={logout} 
@@ -106,7 +121,7 @@ const Navigation = () => {
               Dashboard
             </Link>
             
-            {user?.role === 'customer' && (
+            {isCustomer && (
               <>
                 <Link 
                   to="/request-service" 
@@ -125,7 +140,7 @@ const Navigation = () => {
               </>
             )}
             
-            {user?.role === 'provider' && (
+            {isProvider && (
               <>
                 <Link 
                   to="/my-bids" 
@@ -152,12 +167,26 @@ const Navigation = () => {
               Browse
             </Link>
             
+            {userRoles.length === 1 && (
+              <Link 
+                to="/manage-roles" 
+                className={`mobile-link ${isActive('/manage-roles') ? 'active' : ''}`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Add Role
+              </Link>
+            )}
+            
             <div className="mobile-user-info">
               <div className="mobile-user-details">
                 <span className="mobile-user-name">{user?.first_name}</span>
-                <span className={`mobile-user-role ${user?.role}`}>
-                  {user?.role === 'provider' ? 'Professional' : 'Customer'}
-                </span>
+                <div className="mobile-user-roles">
+                  {userRoles.map((role) => (
+                    <span key={role} className={`mobile-user-role ${role}`}>
+                      {role === 'provider' ? 'Professional' : 'Customer'}
+                    </span>
+                  ))}
+                </div>
               </div>
               <button 
                 onClick={() => {
