@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 
@@ -21,25 +21,23 @@ const ServiceRequestList = () => {
     has_images: searchParams.get('has_images') === 'true',
     show_best_bids_only: searchParams.get('show_best_bids_only') === 'true',
     sort_by: searchParams.get('sort_by') || 'created_at',
-    sort_order: searchParams.get('sort_order') || 'desc'
+    sort_order: searchParams.get('sort_order') || 'desc',
+    limit: 20  // Reduced for better performance
   });
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
-  useEffect(() => {
-    fetchCategories();
-    fetchRequests();
-  }, [filters]);
-
-  const fetchCategories = async () => {
+  // Memoize categories to avoid re-fetching
+  const fetchCategories = useCallback(async () => {
     try {
       const response = await axios.get(`${API}/categories`);
       setCategories(response.data.categories);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
     }
-  };
+  }, []);
 
-  const fetchRequests = async () => {
+  // Debounced fetch function for better performance
+  const fetchRequests = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -56,12 +54,27 @@ const ServiceRequestList = () => {
       setRequests(response.data);
     } catch (error) {
       console.error('Failed to fetch requests:', error);
+      setRequests([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
-  const handleFilterChange = (name, value) => {
+  // Fetch categories only once on mount
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // Debounce API calls to avoid too many requests
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchRequests();
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [fetchRequests]);
+
+  const handleFilterChange = useCallback((name, value) => {
     const newFilters = { ...filters, [name]: value };
     setFilters(newFilters);
     
@@ -69,14 +82,14 @@ const ServiceRequestList = () => {
     const newSearchParams = new URLSearchParams();
     Object.keys(newFilters).forEach(key => {
       const filterValue = newFilters[key];
-      if (filterValue !== '' && filterValue !== false && filterValue !== null && filterValue !== undefined) {
+      if (filterValue !== '' && filterValue !== false && filterValue !== null && filterValue !== undefined && key !== 'limit') {
         newSearchParams.set(key, filterValue);
       }
     });
     setSearchParams(newSearchParams);
-  };
+  }, [filters, setSearchParams]);
 
-  const clearAllFilters = () => {
+  const clearAllFilters = useCallback(() => {
     const clearedFilters = {
       category: '',
       status: 'open',
@@ -88,28 +101,30 @@ const ServiceRequestList = () => {
       has_images: false,
       show_best_bids_only: false,
       sort_by: 'created_at',
-      sort_order: 'desc'
+      sort_order: 'desc',
+      limit: 20
     };
     setFilters(clearedFilters);
     setSearchParams(new URLSearchParams({ status: 'open' }));
-  };
+  }, [setSearchParams]);
 
-  const formatDate = (dateString) => {
+  // Memoized helper functions
+  const formatDate = useCallback((dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
-  };
+  }, []);
 
-  const formatBudget = (min, max) => {
+  const formatBudget = useCallback((min, max) => {
     if (!min && !max) return 'Budget not specified';
     if (min && max) return `$${min} - $${max}`;
     if (min) return `From $${min}`;
     if (max) return `Up to $${max}`;
-  };
+  }, []);
 
-  const getUrgencyBadge = (urgencyLevel) => {
+  const getUrgencyBadge = useCallback((urgencyLevel) => {
     switch (urgencyLevel) {
       case 'urgent':
         return <span className="badge badge-error">🔥 Urgent</span>;
@@ -120,7 +135,88 @@ const ServiceRequestList = () => {
       default:
         return <span className="badge badge-success">🕒 Flexible</span>;
     }
-  };
+  }, []);
+
+  // Memoize the request grid to avoid re-rendering
+  const requestGrid = useMemo(() => (
+    requests.map((request) => (
+      <div key={request.id} className="card hover-lift">
+        <div className="card-body">
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="font-semibold text-xl text-gray-900">{request.title}</h3>
+            <div className="flex items-center gap-2">
+              {getUrgencyBadge(request.urgency_level)}
+              <span className={`badge badge-${request.status}`}>
+                {request.status.replace('_', ' ')}
+              </span>
+            </div>
+          </div>
+          
+          <p className="text-gray-600 mb-4 line-clamp-3">{request.description}</p>
+          
+          <div className="grid grid-2 gap-4 text-sm text-gray-600 mb-4">
+            <div>
+              <strong>Category:</strong> {request.category}
+            </div>
+            <div>
+              <strong>Posted by:</strong> {request.user_name}
+            </div>
+            <div>
+              <strong>Budget:</strong> {formatBudget(request.budget_min, request.budget_max)}
+            </div>
+            <div>
+              <strong>Posted:</strong> {formatDate(request.created_at)}
+            </div>
+          </div>
+          
+          {request.location && (
+            <div className="text-sm text-gray-600 mb-2">
+              <strong>📍 Location:</strong> {request.location}
+            </div>
+          )}
+          
+          {request.deadline && (
+            <div className="text-sm text-gray-600 mb-2">
+              <strong>⏰ Deadline:</strong> {formatDate(request.deadline)}
+            </div>
+          )}
+
+          {request.image_count > 0 && (
+            <div className="text-sm text-gray-600 mb-2">
+              <strong>📷 Images:</strong> {request.image_count}
+            </div>
+          )}
+          
+          <div className="flex justify-between items-center mt-4">
+            <div className="flex items-center gap-4 text-sm">
+              <span className="text-blue-600 font-medium">
+                {request.bid_count} bid{request.bid_count !== 1 ? 's' : ''}
+              </span>
+              
+              {request.avg_bid_price && (
+                <span className="text-green-600 font-medium">
+                  Avg: ${request.avg_bid_price}
+                </span>
+              )}
+              
+              {request.show_best_bids && (
+                <span className="badge badge-in-progress">
+                  Public Bids
+                </span>
+              )}
+            </div>
+            
+            <Link 
+              to={`/services/${request.id}`} 
+              className="btn btn-primary"
+            >
+              View Details
+            </Link>
+          </div>
+        </div>
+      </div>
+    ))
+  ), [requests, getUrgencyBadge, formatBudget, formatDate]);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -294,13 +390,6 @@ const ServiceRequestList = () => {
             {/* Action Buttons */}
             <div className="flex items-center gap-4 mt-4 pt-4 border-t">
               <button
-                onClick={fetchRequests}
-                className="btn btn-primary"
-              >
-                🔍 Apply Filters
-              </button>
-              
-              <button
                 onClick={clearAllFilters}
                 className="btn btn-secondary"
               >
@@ -326,83 +415,7 @@ const ServiceRequestList = () => {
           </div>
         ) : (
           <div className="grid grid-2 gap-6">
-            {requests.map((request) => (
-              <div key={request.id} className="card hover-lift">
-                <div className="card-body">
-                  <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-semibold text-xl text-gray-900">{request.title}</h3>
-                    <div className="flex items-center gap-2">
-                      {getUrgencyBadge(request.urgency_level)}
-                      <span className={`badge badge-${request.status}`}>
-                        {request.status.replace('_', ' ')}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <p className="text-gray-600 mb-4 line-clamp-3">{request.description}</p>
-                  
-                  <div className="grid grid-2 gap-4 text-sm text-gray-600 mb-4">
-                    <div>
-                      <strong>Category:</strong> {request.category}
-                    </div>
-                    <div>
-                      <strong>Posted by:</strong> {request.user_name}
-                    </div>
-                    <div>
-                      <strong>Budget:</strong> {formatBudget(request.budget_min, request.budget_max)}
-                    </div>
-                    <div>
-                      <strong>Posted:</strong> {formatDate(request.created_at)}
-                    </div>
-                  </div>
-                  
-                  {request.location && (
-                    <div className="text-sm text-gray-600 mb-2">
-                      <strong>📍 Location:</strong> {request.location}
-                    </div>
-                  )}
-                  
-                  {request.deadline && (
-                    <div className="text-sm text-gray-600 mb-2">
-                      <strong>⏰ Deadline:</strong> {formatDate(request.deadline)}
-                    </div>
-                  )}
-
-                  {request.image_count > 0 && (
-                    <div className="text-sm text-gray-600 mb-2">
-                      <strong>📷 Images:</strong> {request.image_count}
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-between items-center mt-4">
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="text-blue-600 font-medium">
-                        {request.bid_count} bid{request.bid_count !== 1 ? 's' : ''}
-                      </span>
-                      
-                      {request.avg_bid_price && (
-                        <span className="text-green-600 font-medium">
-                          Avg: ${request.avg_bid_price}
-                        </span>
-                      )}
-                      
-                      {request.show_best_bids && (
-                        <span className="badge badge-in-progress">
-                          Public Bids
-                        </span>
-                      )}
-                    </div>
-                    
-                    <Link 
-                      to={`/services/${request.id}`} 
-                      className="btn btn-primary"
-                    >
-                      View Details
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
+            {requestGrid}
           </div>
         )}
       </div>
