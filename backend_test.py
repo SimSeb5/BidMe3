@@ -1314,6 +1314,13 @@ def main():
     tester.test_enhanced_response_data()
     tester.test_comprehensive_sample_data()
     
+    # BIDME MARKETPLACE ENHANCEMENTS (NEW FEATURES)
+    print("\n🎯 Testing BidMe Marketplace Enhancements (NEW FEATURES)...")
+    tester.test_enhanced_ai_recommendations_with_all_fields()
+    tester.test_service_providers_directory_comprehensive()
+    tester.test_home_dashboard_data_verification()
+    tester.test_sample_data_verification_comprehensive()
+    
     # Error case tests
     print("\n⚠️  Testing Error Cases...")
     tester.test_error_cases()
