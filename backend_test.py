@@ -1307,6 +1307,13 @@ def main():
     tester.test_ai_recommendations_with_coordinates()
     tester.test_ai_recommendations_error_cases()
     
+    # NEW ENHANCED FEATURES TESTING (REVIEW REQUEST FOCUS)
+    print("\n🚀 Testing Enhanced ServiceConnect Features (REVIEW REQUEST FOCUS)...")
+    tester.test_enhanced_subcategories()
+    tester.test_enhanced_service_request_filtering()
+    tester.test_enhanced_response_data()
+    tester.test_comprehensive_sample_data()
+    
     # Error case tests
     print("\n⚠️  Testing Error Cases...")
     tester.test_error_cases()
