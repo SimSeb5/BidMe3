@@ -1778,11 +1778,29 @@ async def startup_event():
 async def initialize_comprehensive_sample_data():
     """Initialize the database with comprehensive sample data including bids"""
     
-    # Check if data already exists
+    # Check if we have comprehensive data (60+ providers and 55+ requests)
     existing_providers = await db.service_providers.count_documents({})
-    if existing_providers > 0:
-        print(f"Sample data already exists ({existing_providers} providers)")
+    existing_requests = await db.service_requests.count_documents({})
+    
+    if existing_providers >= 60 and existing_requests >= 55:
+        print(f"Comprehensive sample data already exists ({existing_providers} providers, {existing_requests} requests)")
         return
+    
+    print(f"Initializing comprehensive BidMe sample data (current: {existing_providers} providers, {existing_requests} requests)")
+    
+    # Clear existing data to ensure clean slate for comprehensive data
+    if existing_providers > 0:
+        await db.service_providers.delete_many({})
+        print(f"Cleared {existing_providers} existing providers")
+    
+    if existing_requests > 0:
+        await db.service_requests.delete_many({})
+        await db.bids.delete_many({})
+        print(f"Cleared {existing_requests} existing requests and associated bids")
+    
+    # Clear existing users except admin accounts
+    await db.users.delete_many({"email": {"$regex": "@bidme.com"}})
+    print("Cleared existing demo users")
     
     # Sample images (using placeholder image service)
     sample_images = [
