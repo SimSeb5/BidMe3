@@ -173,11 +173,11 @@ const Navigation = () => {
             )}
             
             <Link 
-              to="/services" 
-              className={`mobile-link ${isActive('/services') ? 'active' : ''}`}
+              to="/providers" 
+              className={`mobile-link ${isActive('/providers') ? 'active' : ''}`}
               onClick={() => setMobileMenuOpen(false)}
             >
-              Browse
+              Browse Service Providers
             </Link>
             
             {userRoles.length === 1 && (
