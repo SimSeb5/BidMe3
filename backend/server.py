@@ -829,13 +829,17 @@ async def contact_bidder(
 # Bid Routes
 @api_router.post("/bids", response_model=Bid)
 async def create_bid(bid_data: BidCreate, current_user: dict = Depends(get_current_user)):
-    if "provider" not in current_user.get("roles", []):
-        raise HTTPException(status_code=403, detail="Only providers can create bids")
-    
-    # Rest of the function remains the same...
+    # Check if service request exists
     request = await db.service_requests.find_one({"id": bid_data.service_request_id})
     if not request:
         raise HTTPException(status_code=404, detail="Service request not found")
+    
+    if request["status"] != "open":
+        raise HTTPException(status_code=400, detail="Cannot bid on closed requests")
+    
+    # Check if user is a provider
+    if "provider" not in current_user.get("roles", []):
+        raise HTTPException(status_code=403, detail="Only providers can submit bids")
     
     # Check if provider already bid on this request
     existing_bid = await db.bids.find_one({
@@ -845,21 +849,33 @@ async def create_bid(bid_data: BidCreate, current_user: dict = Depends(get_curre
     if existing_bid:
         raise HTTPException(status_code=400, detail="You have already bid on this request")
     
-    provider_name = f"{current_user['first_name']} {current_user['last_name']}"
-    
     # Handle start_date conversion from string to datetime if provided
     bid_dict = bid_data.dict()
     if bid_dict.get("start_date"):
         try:
-            # Parse ISO date string to datetime
-            from datetime import datetime
             bid_dict["start_date"] = datetime.fromisoformat(bid_dict["start_date"].replace('Z', '+00:00'))
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid start_date format. Use ISO format (YYYY-MM-DD)")
     
-    bid = Bid(**bid_dict, provider_id=current_user["id"], provider_name=provider_name)
-    await db.bids.insert_one(bid.dict())
-    return bid
+    provider_name = f"{current_user['first_name']} {current_user['last_name']}"
+    
+    bid = {
+        "id": str(uuid.uuid4()),
+        "service_request_id": bid_data.service_request_id,
+        "provider_id": current_user["id"],
+        "provider_name": provider_name,
+        "price": bid_data.price,
+        "proposal": bid_data.proposal,
+        "start_date": bid_dict.get("start_date"),
+        "duration_days": bid_data.duration_days,
+        "duration_description": bid_data.duration_description,
+        "status": "pending",
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    
+    await db.bids.insert_one(bid)
+    return serialize_mongo_doc(bid)
 
 @api_router.get("/service-requests/{request_id}/bids")
 async def get_bids_for_request(request_id: str, current_user: dict = Depends(get_current_user)):
