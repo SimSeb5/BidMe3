@@ -492,7 +492,7 @@ async def get_bid_messages(bid_id: str, current_user: dict = Depends(get_current
         if user:
             message["sender_name"] = f"{user['first_name']} {user['last_name']}"
     
-    return messages
+    return serialize_mongo_doc(messages)
 
 # Include the router in the main app
 app.include_router(api_router)
