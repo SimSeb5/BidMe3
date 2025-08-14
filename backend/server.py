@@ -220,7 +220,10 @@ class Bid(BaseModel):
 class BidCreate(BaseModel):
     service_request_id: str
     price: float
-    proposal: str
+    proposal: str = ""
+    start_date: Optional[str] = None  # When they can start (ISO date)
+    duration_days: Optional[int] = None  # How many days they need
+    duration_description: Optional[str] = None  # Human readable duration like "2-3 weeks"
 
 class BidMessage(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
