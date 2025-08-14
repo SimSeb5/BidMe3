@@ -113,6 +113,7 @@ class ServiceRequest(BaseModel):
     budget_max: Optional[float] = None
     deadline: Optional[datetime] = None
     location: Optional[str] = None
+    images: List[str] = []  # Base64 encoded images or image URLs
     status: str = "open"  # open, in_progress, completed, cancelled
     show_best_bids: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -126,6 +127,7 @@ class ServiceRequestCreate(BaseModel):
     budget_max: Optional[float] = None
     deadline: Optional[datetime] = None
     location: Optional[str] = None
+    images: List[str] = []  # Base64 encoded images
     show_best_bids: bool = False
 
 class Bid(BaseModel):
