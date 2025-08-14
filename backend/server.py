@@ -46,8 +46,81 @@ SERVICE_CATEGORIES = [
     "Home Services", "Construction & Renovation", "Professional Services",
     "Technology & IT", "Creative & Design", "Business Services",
     "Health & Wellness", "Education & Training", "Transportation",
-    "Events & Entertainment", "Other"
+    "Events & Entertainment", "Emergency Services", "Automotive",
+    "Beauty & Personal Care", "Pet Services", "Financial Services", "Other"
 ]
+
+# Service Subcategories for better filtering
+SERVICE_SUBCATEGORIES = {
+    "Home Services": [
+        "Plumbing", "Electrical", "HVAC", "Cleaning", "Landscaping", "Pest Control",
+        "Appliance Repair", "Handyman", "Security Systems", "Pool Services"
+    ],
+    "Construction & Renovation": [
+        "Kitchen Remodeling", "Bathroom Renovation", "Roofing", "Flooring",
+        "Painting", "Carpentry", "Drywall", "Tile Work", "Windows & Doors", "Decking"
+    ],
+    "Professional Services": [
+        "Legal", "Accounting", "Consulting", "Real Estate", "Insurance",
+        "Architecture", "Engineering", "Translation", "Notary", "Research"
+    ],
+    "Technology & IT": [
+        "Web Development", "Mobile App Development", "IT Support", "Cybersecurity",
+        "Data Analysis", "Software Development", "Database Management", "Cloud Services",
+        "SEO/Digital Marketing", "Computer Repair"
+    ],
+    "Creative & Design": [
+        "Graphic Design", "Web Design", "Photography", "Video Production", "Copywriting",
+        "Logo Design", "Branding", "Interior Design", "Fashion Design", "3D Modeling"
+    ],
+    "Business Services": [
+        "Marketing", "HR Services", "Administrative Support", "Virtual Assistant",
+        "Business Development", "Project Management", "Training", "Equipment Rental",
+        "Delivery Services", "Bookkeeping"
+    ],
+    "Health & Wellness": [
+        "Personal Training", "Nutrition Coaching", "Massage Therapy", "Mental Health",
+        "Physical Therapy", "Yoga Instruction", "Wellness Coaching", "Medical Services",
+        "Spa Services", "Fitness Coaching"
+    ],
+    "Education & Training": [
+        "Tutoring", "Language Learning", "Music Lessons", "Art Instruction", "Test Prep",
+        "Professional Training", "Workshop Facilitation", "Online Courses", "Coaching",
+        "Skill Development"
+    ],
+    "Transportation": [
+        "Moving Services", "Delivery", "Ride Services", "Logistics", "Freight",
+        "Auto Transport", "Equipment Transport", "Courier Services", "Storage",
+        "Packing Services"
+    ],
+    "Events & Entertainment": [
+        "Event Planning", "Catering", "Entertainment", "DJ Services", "Photography",
+        "Venue Rental", "Party Planning", "Wedding Services", "Corporate Events",
+        "Audio/Visual Services"
+    ],
+    "Emergency Services": [
+        "24/7 Plumbing", "Emergency Electrical", "Locksmith", "Towing", "Water Damage",
+        "Fire Damage Restoration", "Storm Cleanup", "Emergency Repairs", "HVAC Emergency",
+        "Security Response"
+    ],
+    "Automotive": [
+        "Auto Repair", "Car Detailing", "Tire Services", "Oil Change", "Brake Repair",
+        "Transmission", "Auto Body", "Car Inspection", "Mobile Mechanic", "Towing"
+    ],
+    "Beauty & Personal Care": [
+        "Hair Styling", "Makeup Services", "Nail Services", "Skincare", "Barbering",
+        "Spa Services", "Wedding Beauty", "Mobile Beauty", "Permanent Makeup", "Wellness"
+    ],
+    "Pet Services": [
+        "Pet Grooming", "Dog Walking", "Pet Sitting", "Veterinary", "Pet Training",
+        "Pet Photography", "Pet Transportation", "Pet Boarding", "Animal Care", "Pet Supplies"
+    ],
+    "Financial Services": [
+        "Tax Preparation", "Financial Planning", "Investment Advice", "Insurance",
+        "Mortgage Services", "Credit Repair", "Bookkeeping", "Payroll Services",
+        "Business Finance", "Retirement Planning"
+    ]
+}
 
 # Models
 class UserRole:
