@@ -18,6 +18,7 @@ import Navigation from './components/Navigation';
 import PublicNavigation from './components/PublicNavigation';
 import PublicHome from './components/PublicHome';
 import RoleManager from './components/RoleManager';
+import ServiceProvidersDirectory from './components/ServiceProvidersDirectory';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}`;
