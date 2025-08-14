@@ -846,7 +846,18 @@ async def create_bid(bid_data: BidCreate, current_user: dict = Depends(get_curre
         raise HTTPException(status_code=400, detail="You have already bid on this request")
     
     provider_name = f"{current_user['first_name']} {current_user['last_name']}"
-    bid = Bid(**bid_data.dict(), provider_id=current_user["id"], provider_name=provider_name)
+    
+    # Handle start_date conversion from string to datetime if provided
+    bid_dict = bid_data.dict()
+    if bid_dict.get("start_date"):
+        try:
+            # Parse ISO date string to datetime
+            from datetime import datetime
+            bid_dict["start_date"] = datetime.fromisoformat(bid_dict["start_date"].replace('Z', '+00:00'))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid start_date format. Use ISO format (YYYY-MM-DD)")
+    
+    bid = Bid(**bid_dict, provider_id=current_user["id"], provider_name=provider_name)
     await db.bids.insert_one(bid.dict())
     return bid
 
