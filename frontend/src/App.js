@@ -14,6 +14,9 @@ import MyRequests from './components/MyRequests';
 import MyBids from './components/MyBids';
 import ProviderProfile from './components/ProviderProfile';
 import Navigation from './components/Navigation';
+import PublicNavigation from './components/PublicNavigation';
+import PublicHome from './components/PublicHome';
+import RoleManager from './components/RoleManager';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -88,6 +91,19 @@ function App() {
     setUser(null);
   };
 
+  const addRole = async (role) => {
+    try {
+      const response = await axios.post(`${API}/user/add-role`, { role });
+      setUser(response.data);
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.response?.data?.detail || 'Failed to add role' 
+      };
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -97,27 +113,38 @@ function App() {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, login, register, logout, addRole }}>
       <div className="App">
         <BrowserRouter>
-          {user && <Navigation />}
+          {/* Show different navigation based on auth status */}
+          {user ? <Navigation /> : <PublicNavigation />}
+          
           <Routes>
-            {!user ? (
+            {/* Public routes - accessible without login */}
+            <Route path="/" element={user ? <Dashboard /> : <PublicHome />} />
+            <Route path="/services" element={<ServiceRequestList />} />
+            <Route path="/services/:id" element={<ServiceRequestDetail />} />
+            <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+            <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
+            
+            {/* Protected routes - require login */}
+            {user ? (
               <>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="*" element={<Navigate to="/login" replace />} />
-              </>
-            ) : (
-              <>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/request-service" element={<ServiceRequestForm />} />
-                <Route path="/services" element={<ServiceRequestList />} />
-                <Route path="/services/:id" element={<ServiceRequestDetail />} />
                 <Route path="/my-requests" element={<MyRequests />} />
                 <Route path="/my-bids" element={<MyBids />} />
                 <Route path="/profile" element={<ProviderProfile />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="/manage-roles" element={<RoleManager />} />
+              </>
+            ) : (
+              <>
+                <Route path="/dashboard" element={<Navigate to="/login" replace />} />
+                <Route path="/request-service" element={<Navigate to="/login" replace />} />
+                <Route path="/my-requests" element={<Navigate to="/login" replace />} />
+                <Route path="/my-bids" element={<Navigate to="/login" replace />} />
+                <Route path="/profile" element={<Navigate to="/login" replace />} />
+                <Route path="/manage-roles" element={<Navigate to="/login" replace />} />
               </>
             )}
           </Routes>
