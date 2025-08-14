@@ -4,7 +4,7 @@ import json
 from datetime import datetime, timedelta
 
 class ServiceConnectAPITester:
-    def __init__(self, base_url="https://taskbidder.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://service-connect-30.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.customer_token = None
         self.provider_token = None
