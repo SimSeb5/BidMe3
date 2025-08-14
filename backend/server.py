@@ -667,6 +667,17 @@ async def get_bid_messages(bid_id: str, current_user: dict = Depends(get_current
     
     return serialize_mongo_doc(messages)
 
+# AI Recommendations endpoint
+@api_router.post("/ai-recommendations")
+async def get_ai_recommendations_endpoint(request: LocationRecommendationRequest, current_user: dict = Depends(get_current_user)):
+    """Get AI-powered recommendations for service providers"""
+    recommendations = await get_ai_recommendations(
+        service_category=request.service_category,
+        description=request.description,
+        location=request.location
+    )
+    return recommendations
+
 async def get_ai_recommendations(service_category: str, description: str, location: str = None):
     """Get AI-powered service provider recommendations"""
     try:
