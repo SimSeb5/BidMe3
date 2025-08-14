@@ -23,9 +23,9 @@ const PublicHome = () => {
   const fetchPublicData = async () => {
     try {
       const [requestsResponse, categoriesResponse, providersResponse] = await Promise.all([
-        axios.get(`${API}/service-requests?status=open&limit=200`), // Increased from 50 to 200
+        axios.get(`${API}/service-requests?status=open&limit=500`), // Get up to 500 open requests
         axios.get(`${API}/categories`),
-        axios.get(`${API}/service-providers?limit=200`) // Increased from 50 to 200
+        axios.get(`${API}/service-providers?limit=1000`) // Get up to 1000 providers
       ]);
 
       console.log('Fetched data:', {
@@ -34,7 +34,7 @@ const PublicHome = () => {
       });
 
       // Calculate completed projects (get actual completed count)
-      const completedResponse = await axios.get(`${API}/service-requests?status=completed&limit=300`); // Increased to show hundreds
+      const completedResponse = await axios.get(`${API}/service-requests?status=completed&limit=500`);
       const completedProjects = completedResponse.data.length;
 
       const verifiedCount = providersResponse.data.filter(provider => provider.verified).length;
@@ -49,21 +49,15 @@ const PublicHome = () => {
       setServiceProviders(providersResponse.data.slice(0, 12)); // Show top 12 providers instead of 8
     } catch (error) {
       console.error('Failed to fetch public data:', error);
-      // Set realistic fallback data to show the marketplace has hundreds of examples
-      const fallbackCategories = [
-        "Home Services", "Construction & Renovation", "Professional Services", "Technology & IT", 
-        "Creative & Design", "Business Services", "Health & Wellness", "Education & Training", 
-        "Transportation", "Events & Entertainment", "Emergency Services", "Automotive"
-      ];
-
+      // If API fails, don't show any stats rather than fake numbers
       setStats({
-        totalRequests: 387, // Hundreds of services needed
-        recentRequests: [], // Will show empty but stats show big numbers
-        completedProjects: 542, // Hundreds of completed projects
-        verifiedProfessionals: 163 // Hundreds of verified professionals
+        totalRequests: 0,
+        recentRequests: [],
+        completedProjects: 0,
+        verifiedProfessionals: 0
       });
-      setCategories(fallbackCategories);
-      setServiceProviders([]); // Empty but stats will show impressive numbers
+      setCategories([]);
+      setServiceProviders([]);
     } finally {
       setLoading(false);
     }
