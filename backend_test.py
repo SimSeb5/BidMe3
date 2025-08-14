@@ -4,16 +4,19 @@ import json
 from datetime import datetime, timedelta
 
 class ServiceConnectAPITester:
-    def __init__(self, base_url="https://taskmate-108.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://12c6a608-9dff-4726-910f-76e0a929a5b4.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.customer_token = None
         self.provider_token = None
+        self.dual_role_token = None
         self.customer_user = None
         self.provider_user = None
+        self.dual_role_user = None
         self.tests_run = 0
         self.tests_passed = 0
         self.service_request_id = None
         self.bid_id = None
+        self.uploaded_image = None
 
     def run_test(self, name, method, endpoint, expected_status, data=None, token=None, params=None):
         """Run a single API test"""
