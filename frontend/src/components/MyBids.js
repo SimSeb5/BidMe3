@@ -12,8 +12,10 @@ const MyBids = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user?.role === 'provider') {
+    if (user?.roles?.includes('provider') || user?.role === 'provider') {
       fetchMyBids();
+    } else {
+      setLoading(false);
     }
   }, [user]);
 
