@@ -23,14 +23,19 @@ const PublicHome = () => {
   const fetchPublicData = async () => {
     try {
       const [requestsResponse, categoriesResponse, providersResponse] = await Promise.all([
-        axios.get(`${API}/service-requests?status=open`),
+        axios.get(`${API}/service-requests?status=open&limit=50`),
         axios.get(`${API}/categories`),
         axios.get(`${API}/service-providers?limit=50`)
       ]);
 
-      // Calculate completed projects (simulate based on existing data)
-      const allRequestsResponse = await axios.get(`${API}/service-requests?limit=100`);
-      const completedProjects = allRequestsResponse.data.filter(req => req.status === 'completed').length + 847; // Add to existing count
+      console.log('Fetched data:', {
+        requests: requestsResponse.data.length,
+        providers: providersResponse.data.length
+      });
+
+      // Calculate completed projects (get actual completed count)
+      const completedResponse = await axios.get(`${API}/service-requests?status=completed&limit=200`);
+      const completedProjects = completedResponse.data.length;
 
       const verifiedCount = providersResponse.data.filter(provider => provider.verified).length;
 
@@ -40,10 +45,19 @@ const PublicHome = () => {
         completedProjects: completedProjects,
         verifiedProfessionals: verifiedCount
       });
-      setCategories(categoriesResponse.data.categories);
+      setCategories(categoriesResponse.data.categories || []);
       setServiceProviders(providersResponse.data.slice(0, 8)); // Show top 8 providers
     } catch (error) {
       console.error('Failed to fetch public data:', error);
+      // Set fallback data so the page doesn't show 0s
+      setStats({
+        totalRequests: 0,
+        recentRequests: [],
+        completedProjects: 0,
+        verifiedProfessionals: 0
+      });
+      setCategories([]);
+      setServiceProviders([]);
     } finally {
       setLoading(false);
     }
