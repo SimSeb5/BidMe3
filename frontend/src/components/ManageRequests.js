@@ -44,6 +44,29 @@ const ManageRequests = () => {
     }
   };
 
+  const handleDeleteRequest = async (requestId, requestTitle) => {
+    if (!window.confirm(`Are you sure you want to permanently delete "${requestTitle}"?\n\nThis will also delete all associated bids and cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API}/service-requests/${requestId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      alert('Request deleted successfully!');
+      fetchMyRequests();
+    } catch (error) {
+      console.error('Failed to delete request:', error);
+      if (error.response?.status === 400) {
+        alert('Cannot delete this request: ' + (error.response.data?.detail || 'Request may be in progress'));
+      } else {
+        alert('Failed to delete request. Please try again.');
+      }
+    }
+  };
+
   const handleEditRequest = (request) => {
     setEditingRequest({
       ...request,
