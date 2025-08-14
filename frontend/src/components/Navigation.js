@@ -83,10 +83,10 @@ const Navigation = () => {
           )}
           
           <Link 
-            to="/services" 
-            className={`nav-link-clean ${isActive('/services') ? 'active' : ''}`}
+            to="/providers" 
+            className={`nav-link-clean ${isActive('/providers') ? 'active' : ''}`}
           >
-            Browse
+            Browse Service Providers
           </Link>
           
           <div className="nav-user-clean">
