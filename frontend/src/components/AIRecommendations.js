@@ -123,7 +123,7 @@ const AIRecommendations = ({
         <div className="ai-insights-section">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <span className="text-2xl">🤖</span>
-            AI Tips for {serviceCategory}
+            AI Recommendations for {serviceCategory}
           </h3>
           
           <div className="grid grid-2 gap-4 mb-6">
