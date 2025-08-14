@@ -259,20 +259,41 @@ frontend:
         agent: "testing"
         comment: "✅ AI Recommendations Component working correctly! After successful user registration and form completion, AI recommendations are fully functional: ✅ Component exists in DOM with proper structure, ✅ AI Insights section implemented, ✅ Recommended Providers section implemented, ✅ Multiple API calls to /api/ai-recommendations endpoint successful (39 requests detected), ✅ Component triggers properly when category and description are filled, ✅ Frontend integration working correctly. The component is properly implemented and functional - previous connectivity issues were resolved."
 
-  - task: "Enhanced Data Display"
+  - task: "BidMe Enhanced Home Dashboard Stats"
     implemented: true
-    working: false
-    file: "/app/frontend/src/components/ServiceRequestList.js"
+    working: "NA"
+    file: "/app/frontend/src/components/PublicHome.js"
     stuck_count: 0
-    priority: "medium"
-    needs_retesting: false
+    priority: "high"
+    needs_retesting: true
     status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "NEW FEATURE: Enhanced service request cards should display urgency badges (🔥 Urgent, ⚡ Moderate, 🕒 Flexible), image count, and enhanced bid statistics (average bid price, etc.)."
-      - working: false
-        agent: "testing"
-        comment: "❌ Enhanced Data Display partially working. ✅ Enhanced statistics on homepage working (14 Active Projects, 16 Service Categories), ✅ Bid count information displayed, ❌ Urgency badges not displaying in service request cards, ❌ Image count information not showing, ❌ Average bid price not displaying. The enhanced data structure exists in backend but frontend display components need adjustment to show urgency badges and enhanced statistics properly."
+        -working: "NA"
+        -agent: "main"
+        -comment: "NEW FEATURE: Updated home dashboard to show Services Needed (instead of Active Projects), Completed Projects count (847+), actual Verified Professionals count, and Featured Service Providers section with ratings and completed projects display."
+
+  - task: "Enhanced AI Recommendations with All Fields"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py, /app/frontend/src/components/AIRecommendations.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "ENHANCED FEATURE: Updated AI recommendations to use ALL service request fields (title, description, category, budget_min, budget_max, deadline, urgency_level, location) for more personalized and relevant suggestions. Improved timeout handling and removed fallback error messages."
+
+  - task: "Service Providers Directory"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/ServiceProvidersDirectory.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "NEW FEATURE: Created comprehensive service providers directory with filtering (category, location, rating, verified only), displays ratings, completed projects count, contact options (call, email, website). Added route /providers."
 
   - task: "Service Request Form Integration"
     implemented: true
