@@ -156,7 +156,7 @@ const PublicHome = () => {
               <p>Describe what you need and set your budget</p>
             </div>
             <div className="action-card">
-              <div className="action-icon">💰</div>
+              <div className="action-icon">📧</div>
               <h3>Receive Bids</h3>
               <p>Get competitive proposals from qualified professionals</p>
             </div>
