@@ -911,36 +911,86 @@ body {
     padding: 0.75rem 1rem;
   }
   
-  /* Better card spacing on mobile */
-  .card {
-    margin: 0.5rem;
-    border-radius: 0.75rem;
-  }
-  
-  .hero {
+  /* Clean design mobile adaptations */
+  .hero-clean {
     padding: 2rem 0;
   }
   
-  .hero h1 {
+  .hero-title {
     font-size: 2rem;
     line-height: 1.2;
   }
   
-  .hero p {
+  .hero-subtitle {
     font-size: 1rem;
   }
   
-  .hero-content {
+  .hero-content-clean {
     padding: 0 1rem;
   }
   
-  .hero .flex {
+  .hero-actions {
     flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .btn-large {
+    min-width: 200px;
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+  }
+  
+  .stats-clean {
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .stat-card-clean {
+    min-width: auto;
+    padding: 1.5rem;
+  }
+  
+  .categories-grid {
+    grid-template-columns: 1fr;
     gap: 1rem;
   }
   
-  .nav-links {
+  .category-card {
+    padding: 1.5rem;
+  }
+  
+  .projects-grid {
+    grid-template-columns: 1fr;
     gap: 1rem;
+  }
+  
+  .project-card {
+    padding: 1.5rem;
+  }
+  
+  .quick-actions {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .action-card {
+    padding: 2rem;
+  }
+  
+  .section-clean {
+    margin-bottom: 2rem;
+  }
+  
+  .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Better card spacing on mobile */
+  .card {
+    margin: 0.5rem;
+    border-radius: 0.75rem;
   }
   
   .card-body {
@@ -972,11 +1022,11 @@ body {
 }
 
 @media (max-width: 480px) {
-  .hero h1 {
+  .hero-title {
     font-size: 1.75rem;
   }
   
-  .hero p {
+  .hero-subtitle {
     font-size: 0.875rem;
   }
   
@@ -989,6 +1039,12 @@ body {
     font-size: 0.875rem;
   }
   
+  .btn-large {
+    min-width: 180px;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
+  }
+  
   .stats {
     grid-template-columns: 1fr;
   }
@@ -999,6 +1055,26 @@ body {
   
   .container {
     padding: 0 0.25rem;
+  }
+  
+  .stats-clean {
+    gap: 0.75rem;
+  }
+  
+  .stat-card-clean {
+    padding: 1.25rem;
+  }
+  
+  .category-card {
+    padding: 1.25rem;
+  }
+  
+  .project-card {
+    padding: 1.25rem;
+  }
+  
+  .action-card {
+    padding: 1.5rem;
   }
 }
 
