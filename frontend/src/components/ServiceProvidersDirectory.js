@@ -245,7 +245,7 @@ const ServiceProvidersDirectory = () => {
                   {/* Stats */}
                   <div className="grid grid-2 gap-3 mb-4 text-sm">
                     <div className="flex items-center gap-2">
-                      <span className="text-green-600">🏆</span>
+                      <span className="text-green-600">✅</span>
                       <span className="text-gray-700">
                         {getRandomCompletedProjects(provider.google_rating, provider.google_reviews_count)} projects
                       </span>
