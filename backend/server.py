@@ -514,7 +514,7 @@ async def create_bid_message(message_data: BidMessageCreate, current_user: dict 
     message = BidMessage(
         **message_data.dict(),
         sender_id=current_user["id"],
-        sender_role=current_user["role"]
+        sender_role="provider" if "provider" in current_user.get("roles", []) else "customer"
     )
     await db.bid_messages.insert_one(message.dict())
     return message
