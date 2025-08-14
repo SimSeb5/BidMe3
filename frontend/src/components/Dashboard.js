@@ -39,20 +39,35 @@ const Dashboard = () => {
       const isCustomer = userRoles.includes('customer');
       const isProvider = userRoles.includes('provider');
       
-      const [requestsResponse, myRequestsResponse, myBidsResponse] = await Promise.all([
-        axios.get(`${API}/service-requests?status=open`),
+      const [requestsResponse, myRequestsResponse, myBidsResponse, providersResponse, completedResponse] = await Promise.all([
+        axios.get(`${API}/service-requests?status=open&limit=500`), // Get up to 500 open requests
         isCustomer ? axios.get(`${API}/my-requests`) : Promise.resolve({ data: [] }),
-        isProvider ? axios.get(`${API}/my-bids`) : Promise.resolve({ data: [] })
+        isProvider ? axios.get(`${API}/my-bids`) : Promise.resolve({ data: [] }),
+        axios.get(`${API}/service-providers?limit=1000`), // Get up to 1000 providers
+        axios.get(`${API}/service-requests?status=completed&limit=500`) // Get completed projects
       ]);
+
+      const verifiedCount = providersResponse.data.filter(provider => provider.verified).length;
 
       setStats({
         totalRequests: requestsResponse.data.length,
         myRequests: myRequestsResponse.data.length,
         myBids: myBidsResponse.data.length,
-        recentRequests: requestsResponse.data.slice(0, 3)
+        recentRequests: requestsResponse.data.slice(0, 3),
+        completedProjects: completedResponse.data.length,
+        verifiedProfessionals: verifiedCount
       });
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
+      // Set basic fallback for personal stats, but don't show fake numbers
+      setStats({
+        totalRequests: 0,
+        myRequests: 0,
+        myBids: 0,
+        recentRequests: [],
+        completedProjects: 0,
+        verifiedProfessionals: 0
+      });
     } finally {
       setLoading(false);
     }
