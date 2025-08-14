@@ -209,7 +209,7 @@ const Dashboard = () => {
                     to={`/services/${request.id}`} 
                     className="btn btn-primary btn-sm w-full"
                   >
-                    {user.role === 'provider' ? 'Submit Proposal' : 'View Details'}
+                    {isProvider ? 'Submit Proposal' : 'View Details'}
                   </Link>
                 </div>
               ))}
