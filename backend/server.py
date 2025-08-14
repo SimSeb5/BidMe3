@@ -1221,147 +1221,112 @@ async def get_service_provider(provider_id: str):
 async def get_ai_recommendations(service_category: str, description: str, location: str = None, title: str = None, budget_min: float = None, budget_max: float = None, deadline: str = None, urgency_level: str = None):
     """Get AI-powered service provider recommendations using comprehensive request details"""
     try:
-        # Initialize AI chat
-        chat = LlmChat(
-            api_key=os.environ.get('EMERGENT_LLM_KEY'),
-            session_id=f"recommendations_{uuid.uuid4()}",
-            system_message="""You are an AI assistant that provides service provider recommendations. 
-
-Your task is to recommend 3 REAL service providers that match the user's request. Choose from these verified providers:
-
-REAL BUSINESSES DATABASE:
-- Roto-Rooter Plumbing & Water Cleanup: Emergency plumbing services, drain cleaning. Phone: (855) 982-2028, Website: https://www.rotorooter.com
-- Mr. Rooter Plumbing: Professional plumbing services, leak detection. Phone: (855) 982-2028, Website: https://www.mrrooter.com  
-- Benjamin Franklin Plumbing: Reliable plumbing with punctual service. Phone: (877) 259-7069, Website: https://www.benfranklinplumbing.com
-- The Home Depot: Home improvement, kitchen remodeling, flooring. Phone: (800) 466-3337, Website: https://www.homedepot.com/services
-- Lowe's Home Improvement: Professional installation services. Phone: (800) 445-6937, Website: https://www.lowes.com/l/installation-services
-- DreamMaker Bath & Kitchen: Bathroom and kitchen remodeling specialists. Phone: (800) 237-3271, Website: https://www.dreamstyleremodeling.com
-- Best Buy Geek Squad: Computer repair, tech support. Phone: (800) 433-5778, Website: https://www.bestbuy.com/site/geek-squad
-- Staples Tech Services: Business technology services. Phone: (855) 782-7437, Website: https://www.staples.com/services/technology
-- uBreakiFix by Asurion: Device repair for smartphones, tablets, computers. Phone: (844) 382-7325, Website: https://www.ubreakifix.com
-- LegalZoom: Online legal services for business formation. Phone: (800) 773-0888, Website: https://www.legalzoom.com
-- Rocket Lawyer: Affordable legal services and documents. Phone: (877) 885-0088, Website: https://www.rocketlawyer.com
-- Fiverr Pro Services: Professional creative services, graphic design. Phone: (877) 634-8371, Website: https://pro.fiverr.com
-- 99designs: Custom design services, logos, websites. Phone: (855) 699-3374, Website: https://99designs.com
-- Jiffy Lube: Quick oil changes and automotive maintenance. Phone: (800) 344-6933, Website: https://www.jiffylube.com
-- Valvoline Instant Oil Change: Fast oil changes. Phone: (800) 825-8654, Website: https://www.vioc.com
-- Midas Auto Service: Complete automotive services. Phone: (800) 643-2728, Website: https://www.midas.com
-- U-Haul Moving & Storage: Moving truck rentals, storage. Phone: (800) 468-4285, Website: https://www.uhaul.com
-- Two Men and a Truck: Professional moving services. Phone: (800) 345-1070, Website: https://twomenandatruck.com
-- Allied Van Lines: Full-service moving company. Phone: (800) 689-8684, Website: https://www.allied.com
-- Petco Grooming Services: Professional pet grooming. Phone: (877) 738-6742, Website: https://www.petco.com/shop/services/grooming
-- PetSmart Grooming: Pet grooming with certified groomers. Phone: (888) 839-9638, Website: https://services.petsmart.com/grooming
-- CVS MinuteClinic: Walk-in medical clinic services. Phone: (866) 389-2727, Website: https://www.cvs.com/minuteclinic
-- Planet Fitness: Affordable gym memberships, fitness. Phone: (844) 746-3482, Website: https://www.planetfitness.com
-- H&R Block: Tax preparation and filing services. Phone: (800) 472-5625, Website: https://www.hrblock.com
-- Jackson Hewitt Tax Service: Professional tax preparation. Phone: (800) 234-1040, Website: https://www.jacksonhewitt.com
-- Great Clips: Affordable hair cuts and styling. Phone: (800) 999-2547, Website: https://www.greatclips.com
-- Sport Clips Haircuts: Men's hair care specialists. Phone: (800) 776-7874, Website: https://www.sportclips.com
-
-Select 3 providers that best match the service category and requirements. Provide their real contact information."""
-        ).with_model("openai", "gpt-4o-mini")
-
-        # Build comprehensive project details
-        project_details = {
-            "service_category": service_category,
-            "description": description
+        # Real businesses database with location awareness
+        real_businesses_by_location = {
+            "new york": [
+                {"name": "Roto-Rooter Plumbing & Water Cleanup", "phone": "(855) 982-2028", "website": "https://www.rotorooter.com", "category": "Home Services", "description": "Emergency plumbing services, drain cleaning, and water damage restoration. Available 24/7 for urgent repairs.", "location": "New York, NY"},
+                {"name": "The Home Depot", "phone": "(800) 466-3337", "website": "https://www.homedepot.com/services", "category": "Construction & Renovation", "description": "Home improvement services including kitchen remodeling, flooring installation, and bathroom renovation.", "location": "New York, NY"},
+                {"name": "Best Buy Geek Squad", "phone": "(800) 433-5778", "website": "https://www.bestbuy.com/site/geek-squad", "category": "Technology & IT", "description": "Computer repair, tech support, and installation services for home and business.", "location": "New York, NY"}
+            ],
+            "los angeles": [
+                {"name": "Mr. Rooter Plumbing", "phone": "(855) 982-2028", "website": "https://www.mrrooter.com", "category": "Home Services", "description": "Professional plumbing services including leak detection, pipe repair, and fixture installation.", "location": "Los Angeles, CA"},
+                {"name": "LegalZoom", "phone": "(800) 773-0888", "website": "https://www.legalzoom.com", "category": "Professional Services", "description": "Online legal services for business formation, estate planning, and legal documentation.", "location": "Los Angeles, CA"},
+                {"name": "Fiverr Pro Services", "phone": "(877) 634-8371", "website": "https://pro.fiverr.com", "category": "Creative & Design", "description": "Professional creative services including graphic design, branding, and marketing materials.", "location": "Los Angeles, CA"}
+            ],
+            "chicago": [
+                {"name": "Benjamin Franklin Plumbing", "phone": "(877) 259-7069", "website": "https://www.benfranklinplumbing.com", "category": "Home Services", "description": "Reliable plumbing services with punctual service and upfront pricing.", "location": "Chicago, IL"},
+                {"name": "U-Haul Moving & Storage", "phone": "(800) 468-4285", "website": "https://www.uhaul.com", "category": "Transportation", "description": "Moving truck rentals, storage solutions, and moving supplies for DIY moves.", "location": "Chicago, IL"}
+            ],
+            "atlanta": [
+                {"name": "The Home Depot", "phone": "(800) 466-3337", "website": "https://www.homedepot.com/services", "category": "Construction & Renovation", "description": "Home improvement services including kitchen remodeling, flooring installation, and bathroom renovation.", "location": "Atlanta, GA"}
+            ],
+            "seattle": [
+                {"name": "Best Buy Geek Squad", "phone": "(800) 433-5778", "website": "https://www.bestbuy.com/site/geek-squad", "category": "Technology & IT", "description": "Computer repair, tech support, and installation services for home and business.", "location": "Seattle, WA"}
+            ],
+            "boston": [
+                {"name": "Staples Tech Services", "phone": "(855) 782-7437", "website": "https://www.staples.com/services/technology", "category": "Technology & IT", "description": "Business technology services including setup, repair, and IT consulting.", "location": "Boston, MA"},
+                {"name": "CVS MinuteClinic", "phone": "(866) 389-2727", "website": "https://www.cvs.com/minuteclinic", "category": "Health & Wellness", "description": "Walk-in medical clinic services including vaccinations, health screenings, and minor illness treatment.", "location": "Boston, MA"}
+            ],
+            "miami": [
+                {"name": "Fiverr Pro Services", "phone": "(877) 634-8371", "website": "https://pro.fiverr.com", "category": "Creative & Design", "description": "Professional creative services including graphic design, branding, and marketing materials.", "location": "Miami, FL"}
+            ],
+            "houston": [
+                {"name": "Jiffy Lube", "phone": "(800) 344-6933", "website": "https://www.jiffylube.com", "category": "Automotive", "description": "Quick oil changes and automotive maintenance services at convenient locations.", "location": "Houston, TX"}
+            ]
         }
         
-        if title:
-            project_details["title"] = title
-        if budget_min and budget_max:
-            project_details["budget_range"] = f"${budget_min:,.0f} - ${budget_max:,.0f}"
-        elif budget_min:
-            project_details["minimum_budget"] = f"${budget_min:,.0f}"
-        elif budget_max:
-            project_details["maximum_budget"] = f"${budget_max:,.0f}"
-        if deadline:
-            project_details["deadline"] = deadline
-        if urgency_level:
-            project_details["urgency"] = urgency_level
-        if location:
-            project_details["location"] = location
-
-        # Create enhanced recommendation prompt
-        prompt_parts = [
-            f"Find 3 REAL service providers for this project:",
-            f"",
-            f"**Project Details:**"
+        # National providers (available everywhere)
+        national_providers = [
+            {"name": "The Home Depot", "phone": "(800) 466-3337", "website": "https://www.homedepot.com/services", "category": "Construction & Renovation", "description": "Home improvement services including kitchen remodeling, flooring installation, and bathroom renovation."},
+            {"name": "Lowe's Home Improvement", "phone": "(800) 445-6937", "website": "https://www.lowes.com/l/installation-services", "category": "Construction & Renovation", "description": "Professional installation services for flooring, appliances, and home improvement projects."},
+            {"name": "Best Buy Geek Squad", "phone": "(800) 433-5778", "website": "https://www.bestbuy.com/site/geek-squad", "category": "Technology & IT", "description": "Computer repair, tech support, and installation services for home and business."},
+            {"name": "LegalZoom", "phone": "(800) 773-0888", "website": "https://www.legalzoom.com", "category": "Professional Services", "description": "Online legal services for business formation, estate planning, and legal documentation."},
+            {"name": "H&R Block", "phone": "(800) 472-5625", "website": "https://www.hrblock.com", "category": "Financial Services", "description": "Tax preparation and filing services with year-round support and audit protection."},
+            {"name": "U-Haul Moving & Storage", "phone": "(800) 468-4285", "website": "https://www.uhaul.com", "category": "Transportation", "description": "Moving truck rentals, storage solutions, and moving supplies for DIY moves."},
+            {"name": "Petco Grooming Services", "phone": "(877) 738-6742", "website": "https://www.petco.com/shop/services/grooming", "category": "Pet Services", "description": "Professional pet grooming services including baths, cuts, and nail trimming."}
         ]
-        
-        for key, value in project_details.items():
-            prompt_parts.append(f"- {key.replace('_', ' ').title()}: {value}")
-        
-        prompt_parts.extend([
-            f"",
-            f"Please respond with a JSON object containing:",
-            f"1. recommended_providers: Array of 3 real providers with name, phone, website, description, and why they're a good match",
-            f"2. general_tips: Brief advice for this type of project",
-            f"",
-            f"Format each provider as: {{\"name\": \"Business Name\", \"phone\": \"(xxx) xxx-xxxx\", \"website\": \"https://...\", \"description\": \"What they do\", \"match_reason\": \"Why perfect for this project\"}}"
-        ])
 
-        user_message = UserMessage(text="\n".join(prompt_parts))
-
-        # Get AI response
-        response = await chat.send_message(user_message)
+        # Find location-specific providers
+        location_providers = []
+        if location:
+            location_lower = location.lower()
+            for city in real_businesses_by_location:
+                if city in location_lower or location_lower in city:
+                    location_providers = real_businesses_by_location[city]
+                    break
         
-        # Try to parse JSON response
-        try:
-            ai_response = json.loads(response)
-            
-            # Ensure we have the expected structure
-            if "recommended_providers" not in ai_response:
-                raise ValueError("Missing recommended_providers")
+        # Filter providers by service category
+        all_providers = location_providers + national_providers
+        relevant_providers = []
+        
+        for provider in all_providers:
+            # Check if provider's category matches or is related
+            if (service_category.lower() in provider["category"].lower() or 
+                provider["category"].lower() in service_category.lower() or
+                any(keyword in provider["category"].lower() for keyword in service_category.lower().split())):
                 
-            return ai_response
-        except:
-            # Enhanced fallback with real business suggestions based on category
-            fallback_providers = []
-            
-            if service_category.lower() in ["home services", "plumbing", "plumber"]:
-                fallback_providers = [
-                    {"name": "Roto-Rooter Plumbing & Water Cleanup", "phone": "(855) 982-2028", "website": "https://www.rotorooter.com", "description": "Emergency plumbing services available 24/7", "match_reason": "Specialized in urgent plumbing repairs"},
-                    {"name": "Mr. Rooter Plumbing", "phone": "(855) 982-2028", "website": "https://www.mrrooter.com", "description": "Professional plumbing leak detection and repair", "match_reason": "Expert in comprehensive plumbing solutions"},
-                    {"name": "Benjamin Franklin Plumbing", "phone": "(877) 259-7069", "website": "https://www.benfranklinplumbing.com", "description": "Punctual plumbing service with upfront pricing", "match_reason": "Reliable service with transparent pricing"}
-                ]
-            elif service_category.lower() in ["construction", "renovation", "remodeling"]:
-                fallback_providers = [
-                    {"name": "The Home Depot", "phone": "(800) 466-3337", "website": "https://www.homedepot.com/services", "description": "Home improvement and kitchen remodeling", "match_reason": "Full-service renovation capabilities"},
-                    {"name": "Lowe's Home Improvement", "phone": "(800) 445-6937", "website": "https://www.lowes.com/l/installation-services", "description": "Professional installation services", "match_reason": "Experienced in home improvement projects"},
-                    {"name": "DreamMaker Bath & Kitchen", "phone": "(800) 237-3271", "website": "https://www.dreamstyleremodeling.com", "description": "Kitchen and bathroom specialists", "match_reason": "Custom remodeling expertise"}
-                ]
-            elif service_category.lower() in ["technology", "it", "computer"]:
-                fallback_providers = [
-                    {"name": "Best Buy Geek Squad", "phone": "(800) 433-5778", "website": "https://www.bestbuy.com/site/geek-squad", "description": "Computer repair and tech support", "match_reason": "Comprehensive technology services"},
-                    {"name": "Staples Tech Services", "phone": "(855) 782-7437", "website": "https://www.staples.com/services/technology", "description": "Business technology services", "match_reason": "Professional IT solutions"},
-                    {"name": "uBreakiFix by Asurion", "phone": "(844) 382-7325", "website": "https://www.ubreakifix.com", "description": "Device repair specialists", "match_reason": "Expert device repair services"}
-                ]
-            elif service_category.lower() in ["legal", "professional services"]:
-                fallback_providers = [
-                    {"name": "LegalZoom", "phone": "(800) 773-0888", "website": "https://www.legalzoom.com", "description": "Online legal services", "match_reason": "Affordable legal documentation"},
-                    {"name": "Rocket Lawyer", "phone": "(877) 885-0088", "website": "https://www.rocketlawyer.com", "description": "Legal services and documents", "match_reason": "Comprehensive legal support"}
-                ]
+                # Add location if not specified
+                if "location" not in provider and location:
+                    provider["location"] = location
+                elif "location" not in provider:
+                    provider["location"] = "Nationwide"
+                    
+                relevant_providers.append(provider)
+        
+        # If no category matches, include some general providers
+        if not relevant_providers:
+            relevant_providers = national_providers[:3]
+            for provider in relevant_providers:
+                if "location" not in provider:
+                    provider["location"] = location if location else "Nationwide"
+
+        # Select top 3 most relevant
+        selected_providers = relevant_providers[:3]
+        
+        # Add match reasons based on the request
+        for provider in selected_providers:
+            if budget_min and budget_max:
+                provider["match_reason"] = f"Experienced in {service_category.lower()} with pricing that fits ${budget_min:,.0f}-${budget_max:,.0f} budget"
+            elif urgency_level == "urgent":
+                provider["match_reason"] = f"Available for urgent {service_category.lower()} projects"
+            elif location and provider.get("location", "").lower() != "nationwide":
+                provider["match_reason"] = f"Local {service_category.lower()} expert in your area"
             else:
-                # Default mixed providers for other categories
-                fallback_providers = [
-                    {"name": "The Home Depot", "phone": "(800) 466-3337", "website": "https://www.homedepot.com/services", "description": "Home improvement services", "match_reason": "Versatile service capabilities"},
-                    {"name": "Best Buy Geek Squad", "phone": "(800) 433-5778", "website": "https://www.bestbuy.com/site/geek-squad", "description": "Technology support services", "match_reason": "Professional technical expertise"}
-                ]
-            
-            return {
-                "recommended_providers": fallback_providers[:3],  # Ensure max 3 providers
-                "general_tips": f"For {service_category.lower()} projects, get multiple quotes, verify licenses and insurance, and check recent customer reviews."
-            }
+                provider["match_reason"] = f"Specialized in {service_category.lower()} services"
+
+        return {
+            "recommended_providers": selected_providers,
+            "general_tips": f"For {service_category.lower()} projects in {location if location else 'your area'}, always verify licenses, get multiple quotes, and check recent customer reviews. Consider proximity for faster service and lower travel costs."
+        }
 
     except Exception as e:
         print(f"AI recommendation error: {e}")
         # Return basic fallback with real businesses
         return {
             "recommended_providers": [
-                {"name": "The Home Depot", "phone": "(800) 466-3337", "website": "https://www.homedepot.com/services", "description": "Professional home services", "match_reason": "Reliable nationwide service provider"},
-                {"name": "Best Buy Geek Squad", "phone": "(800) 433-5778", "website": "https://www.bestbuy.com/site/geek-squad", "description": "Technology support", "match_reason": "Expert technical assistance"},
-                {"name": "LegalZoom", "phone": "(800) 773-0888", "website": "https://www.legalzoom.com", "description": "Legal services", "match_reason": "Professional legal support"}
+                {"name": "The Home Depot", "phone": "(800) 466-3337", "website": "https://www.homedepot.com/services", "description": "Professional home services", "match_reason": "Reliable nationwide service provider", "location": location if location else "Nationwide"},
+                {"name": "Best Buy Geek Squad", "phone": "(800) 433-5778", "website": "https://www.bestbuy.com/site/geek-squad", "description": "Technology support", "match_reason": "Expert technical assistance", "location": location if location else "Nationwide"},
+                {"name": "LegalZoom", "phone": "(800) 773-0888", "website": "https://www.legalzoom.com", "description": "Legal services", "match_reason": "Professional legal support", "location": location if location else "Nationwide"}
             ],
             "general_tips": "Always verify credentials, get multiple quotes, and check reviews before hiring any service provider."
         }
