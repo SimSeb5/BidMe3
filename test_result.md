@@ -321,11 +321,11 @@ frontend:
 
   - task: "Service Request Form Integration"
     implemented: true
-    working: true
+    working: false
     file: "/app/frontend/src/components/ServiceRequestForm.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
@@ -333,6 +333,45 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✅ Service request form integration is working correctly. Form loads properly, all fields are functional, categories are populated from backend API, location detection works, form validation is implemented, and AI recommendations component is properly integrated (triggers when category and description are filled). Form submission works but redirects to same page instead of service detail page. Minor: Form submission should redirect to created service detail page."
+      - working: false
+        agent: "main"
+        comment: "USER FEEDBACK: Date picker causes automatic scroll-up issue which disrupts user experience. Need to fix scroll behavior and implement AI-driven category selection."
+
+  - task: "Dashboard Count Updates"
+    implemented: false
+    working: false
+    file: "/app/frontend/src/components/Dashboard.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "USER FEEDBACK: Dashboard counts don't update when new services or providers are added. Need to investigate and fix data refresh mechanism."
+
+  - task: "AI-Driven Category Selection"
+    implemented: false
+    working: false
+    file: "/app/frontend/src/components/ServiceRequestForm.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "USER REQUEST: Replace manual category selection with AI-powered category selection using title and description. Requires Emergent LLM integration."
+
+  - task: "Form Field Reordering"
+    implemented: false
+    working: false
+    file: "/app/frontend/src/components/ServiceRequestForm.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "USER REQUEST: Reorder form fields - location should appear after category and before description for better UX flow."
 
   - task: "Core Authentication UI"
     implemented: true
