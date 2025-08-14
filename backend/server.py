@@ -579,6 +579,8 @@ async def get_service_requests(
         request["image_count"] = len(request.get("images", []))
     
     return serialize_mongo_doc(requests)
+    
+    return serialize_mongo_doc(requests)
 
 @api_router.get("/service-requests/{request_id}")
 async def get_service_request(request_id: str):
