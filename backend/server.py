@@ -321,7 +321,7 @@ async def get_service_request(request_id: str):
     if user:
         request["user_name"] = f"{user['first_name']} {user['last_name']}"
     
-    return request
+    return serialize_mongo_doc(request)
 
 @api_router.get("/my-requests")
 async def get_my_requests(current_user: dict = Depends(get_current_user)):
