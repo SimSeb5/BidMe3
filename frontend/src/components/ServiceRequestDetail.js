@@ -449,3 +449,51 @@ const ServiceRequestDetail = () => {
 };
 
 export default ServiceRequestDetail;
+
+{/* Image Modal */}
+{selectedImageIndex !== null && request.images && (
+  <div className="modal-overlay" onClick={() => setSelectedImageIndex(null)}>
+    <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-header">
+        <h2 className="text-xl font-semibold">
+          Project Image {selectedImageIndex + 1} of {request.images.length}
+        </h2>
+        <button onClick={() => setSelectedImageIndex(null)} className="text-gray-500 hover:text-gray-700">
+          ✕
+        </button>
+      </div>
+      
+      <div className="modal-body text-center">
+        <img 
+          src={request.images[selectedImageIndex]} 
+          alt={`Project image ${selectedImageIndex + 1}`}
+          className="max-w-full max-h-96 mx-auto rounded-lg"
+        />
+        
+        <div className="flex justify-center items-center gap-4 mt-4">
+          {selectedImageIndex > 0 && (
+            <button
+              onClick={() => setSelectedImageIndex(selectedImageIndex - 1)}
+              className="btn btn-secondary btn-sm"
+            >
+              ← Previous
+            </button>
+          )}
+          
+          <span className="text-sm text-gray-600">
+            {selectedImageIndex + 1} / {request.images.length}
+          </span>
+          
+          {selectedImageIndex < request.images.length - 1 && (
+            <button
+              onClick={() => setSelectedImageIndex(selectedImageIndex + 1)}
+              className="btn btn-secondary btn-sm"
+            >
+              Next →
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
