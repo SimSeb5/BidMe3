@@ -11,6 +11,7 @@ import ServiceRequestForm from './components/ServiceRequestForm';
 import ServiceRequestList from './components/ServiceRequestList';
 import ServiceRequestDetail from './components/ServiceRequestDetail';
 import MyRequests from './components/MyRequests';
+import ManageRequests from './components/ManageRequests';
 import MyBids from './components/MyBids';
 import ProviderProfile from './components/ProviderProfile';
 import Navigation from './components/Navigation';
