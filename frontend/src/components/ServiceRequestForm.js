@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../App';
+import ImageUpload from './ImageUpload';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -18,13 +19,16 @@ const ServiceRequestForm = () => {
     budget_max: '',
     deadline: '',
     location: '',
+    images: [],
     show_best_bids: false
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (user?.role !== 'customer') {
+    // Support both old and new role systems
+    const userRoles = user?.roles || [user?.role];
+    if (!userRoles.includes('customer')) {
       navigate('/');
       return;
     }
@@ -69,9 +73,9 @@ const ServiceRequestForm = () => {
         submitData.deadline = new Date(submitData.deadline).toISOString();
       }
       
-      // Remove empty fields
+      // Remove empty fields except images
       Object.keys(submitData).forEach(key => {
-        if (submitData[key] === '' || submitData[key] === null) {
+        if (key !== 'images' && (submitData[key] === '' || submitData[key] === null)) {
           delete submitData[key];
         }
       });
@@ -142,6 +146,19 @@ const ServiceRequestForm = () => {
                     required
                     rows={5}
                     placeholder="Provide detailed information about what you need, any specific requirements, materials, timeline, etc."
+                  />
+                </div>
+
+                {/* Image Upload Section */}
+                <div className="form-group">
+                  <label className="form-label">Project Images (Optional)</label>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Add images to help service providers better understand your project requirements
+                  </p>
+                  <ImageUpload 
+                    images={formData.images}
+                    setImages={(images) => setFormData({ ...formData, images })}
+                    maxImages={5}
                   />
                 </div>
                 
