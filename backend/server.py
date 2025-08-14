@@ -342,10 +342,10 @@ async def get_my_requests(current_user: dict = Depends(get_current_user)):
 # Bid Routes
 @api_router.post("/bids", response_model=Bid)
 async def create_bid(bid_data: BidCreate, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "provider":
+    if "provider" not in current_user.get("roles", []):
         raise HTTPException(status_code=403, detail="Only providers can create bids")
     
-    # Check if request exists
+    # Rest of the function remains the same...
     request = await db.service_requests.find_one({"id": bid_data.service_request_id})
     if not request:
         raise HTTPException(status_code=404, detail="Service request not found")
