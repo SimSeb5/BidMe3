@@ -1005,6 +1005,22 @@ async def initialize_sample_providers():
             await db.service_providers.insert_one(provider.dict())
         print(f"Initialized {len(sample_providers)} sample service providers")
 
+# Clear test data endpoint (for development)
+@api_router.post("/admin/clear-test-data")
+async def clear_test_data():
+    """Clear all test data from the database"""
+    try:
+        # Clear collections but keep the structure
+        await db.service_requests.delete_many({})
+        await db.bids.delete_many({})
+        await db.bid_messages.delete_many({})
+        await db.users.delete_many({})
+        await db.provider_profiles.delete_many({})
+        
+        return {"message": "Test data cleared successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error clearing data: {str(e)}")
+
 # Initialize sample data on startup
 @app.on_event("startup")
 async def startup_event():
