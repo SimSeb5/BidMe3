@@ -19,6 +19,11 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
 
+  // Add a function to refresh dashboard data
+  const refreshDashboardData = () => {
+    fetchDashboardData();
+  };
+
   useEffect(() => {
     fetchDashboardData();
     fetchCategories();
@@ -38,12 +43,7 @@ const Dashboard = () => {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
-
-  // Add a function to refresh dashboard data
-  const refreshDashboardData = () => {
-    fetchDashboardData();
-  };
+  }, [refreshDashboardData]);
 
   const fetchCategories = async () => {
     try {
