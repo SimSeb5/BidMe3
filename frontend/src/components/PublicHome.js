@@ -211,7 +211,7 @@ const PublicHome = () => {
               Ready to Get Started?
             </h2>
             <p className="text-gray-600 mb-6">
-              Join thousands of customers and service providers on ServiceConnect
+              Join thousands of customers and service providers on BidMe
             </p>
             <div className="flex gap-4 justify-center flex-wrap">
               <Link to="/register" className="btn btn-primary btn-large">
