@@ -56,7 +56,7 @@ class User(BaseModel):
     email: EmailStr
     phone: str
     password_hash: str
-    role: str  # customer or provider
+    roles: List[str] = ["customer"]  # Can have multiple roles: customer, provider
     first_name: str
     last_name: str
     is_verified: bool = False
@@ -67,9 +67,12 @@ class UserCreate(BaseModel):
     email: EmailStr
     phone: str
     password: str
-    role: str
+    role: str  # Will be converted to roles list
     first_name: str
     last_name: str
+
+class UserRoleUpdate(BaseModel):
+    roles: List[str]
 
 class UserLogin(BaseModel):
     email: EmailStr
