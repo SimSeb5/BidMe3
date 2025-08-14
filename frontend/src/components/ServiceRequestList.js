@@ -22,7 +22,7 @@ const ServiceRequestList = () => {
     show_best_bids_only: searchParams.get('show_best_bids_only') === 'true',
     sort_by: searchParams.get('sort_by') || 'created_at',
     sort_order: searchParams.get('sort_order') || 'desc',
-    limit: 20  // Reduced for better performance
+    limit: 100  // Increased from 20 to 100 for better display of hundreds
   });
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
