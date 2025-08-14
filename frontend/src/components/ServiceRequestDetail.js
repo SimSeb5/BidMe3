@@ -145,7 +145,7 @@ const ServiceRequestDetail = () => {
   }
 
   const isOwner = user?.id === request.user_id;
-  const canBid = user?.role === 'provider' && !isOwner && request.status === 'open';
+  const canBid = user?.roles?.includes('provider') && !isOwner && request.status === 'open';
   const userBid = bids.find(bid => bid.provider_id === user?.id);
   
   return (
