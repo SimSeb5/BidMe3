@@ -40,7 +40,7 @@ const MyBids = () => {
     });
   };
 
-  if (user?.role !== 'provider') {
+  if (!(user?.roles?.includes('provider') || user?.role === 'provider')) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="container text-center">
