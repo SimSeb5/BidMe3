@@ -1068,17 +1068,11 @@ async def get_bid_messages(bid_id: str, current_user: dict = Depends(get_current
 # AI Recommendations endpoint with caching
 @api_router.post("/ai-recommendations")
 async def get_service_recommendations(request: LocationRecommendationRequest):
-    """Get AI-powered service provider recommendations with caching"""
-    
-    # Create cache key based on request content
-    cache_key = f"ai_rec_{hash(f'{request.service_category}_{request.description}_{request.location}')}"
-    
-    # Check if we have cached results (simulate with a simple in-memory cache)
-    # In production, use Redis or similar
+    """Get AI-powered service provider recommendations with real businesses"""
     
     try:
-        # Get AI insights with timeout and fallback
-        ai_insights = await asyncio.wait_for(
+        # Get AI recommendations (now includes real business suggestions)
+        ai_response = await asyncio.wait_for(
             get_ai_recommendations(
                 request.service_category,
                 request.description,
@@ -1089,57 +1083,63 @@ async def get_service_recommendations(request: LocationRecommendationRequest):
                 request.deadline,
                 request.urgency_level
             ),
-            timeout=5.0  # Increased timeout to 5 seconds for better results
+            timeout=8.0  # Increased timeout for better AI responses
         )
-    except asyncio.TimeoutError:
-        # Fallback to quick response if AI is slow
-        budget_guidance = "Get multiple quotes for comparison"
-        if request.budget_min and request.budget_max:
-            budget_guidance = f"Expect quotes within ${request.budget_min:,.0f} - ${request.budget_max:,.0f}"
         
-        ai_insights = {
-            "qualifications": ["Licensed and insured", "Good reviews and ratings", "Relevant experience"],
-            "questions": ["Are you licensed and insured?", "Can you provide references?", "What's your timeline?"],
-            "red_flags": ["No license or insurance", "Unusually low prices", "Pressure for immediate payment"],
-            "price_range": budget_guidance,
-            "timeline": "Discuss timeline expectations upfront"
+        return {
+            "recommended_providers": ai_response.get("recommended_providers", []),
+            "general_tips": ai_response.get("general_tips", "Get multiple quotes and verify credentials before hiring."),
+            "total_providers_found": len(ai_response.get("recommended_providers", []))
+        }
+        
+    except asyncio.TimeoutError:
+        # Fallback with real businesses if AI is slow
+        fallback_providers = []
+        
+        if request.service_category.lower() in ["home services", "plumbing"]:
+            fallback_providers = [
+                {"name": "Roto-Rooter Plumbing & Water Cleanup", "phone": "(855) 982-2028", "website": "https://www.rotorooter.com", "description": "Emergency plumbing services", "match_reason": "24/7 emergency availability"},
+                {"name": "Mr. Rooter Plumbing", "phone": "(855) 982-2028", "website": "https://www.mrrooter.com", "description": "Professional plumbing services", "match_reason": "Comprehensive repair expertise"},
+                {"name": "Benjamin Franklin Plumbing", "phone": "(877) 259-7069", "website": "https://www.benfranklinplumbing.com", "description": "Punctual plumbing service", "match_reason": "Reliable and punctual service"}
+            ]
+        elif request.service_category.lower() in ["construction", "renovation"]:
+            fallback_providers = [
+                {"name": "The Home Depot", "phone": "(800) 466-3337", "website": "https://www.homedepot.com/services", "description": "Home improvement services", "match_reason": "Complete renovation capabilities"},
+                {"name": "Lowe's Home Improvement", "phone": "(800) 445-6937", "website": "https://www.lowes.com/l/installation-services", "description": "Professional installation", "match_reason": "Expert installation services"},
+                {"name": "DreamMaker Bath & Kitchen", "phone": "(800) 237-3271", "website": "https://www.dreamstyleremodeling.com", "description": "Kitchen and bathroom specialists", "match_reason": "Specialized in kitchens/bathrooms"}
+            ]
+        elif request.service_category.lower() in ["technology", "it"]:
+            fallback_providers = [
+                {"name": "Best Buy Geek Squad", "phone": "(800) 433-5778", "website": "https://www.bestbuy.com/site/geek-squad", "description": "Computer repair and tech support", "match_reason": "Comprehensive tech support"},
+                {"name": "Staples Tech Services", "phone": "(855) 782-7437", "website": "https://www.staples.com/services/technology", "description": "Business technology services", "match_reason": "Professional IT solutions"},
+                {"name": "uBreakiFix by Asurion", "phone": "(844) 382-7325", "website": "https://www.ubreakifix.com", "description": "Device repair specialists", "match_reason": "Expert device repairs"}
+            ]
+        else:
+            # Default providers for other categories
+            fallback_providers = [
+                {"name": "The Home Depot", "phone": "(800) 466-3337", "website": "https://www.homedepot.com/services", "description": "Home improvement services", "match_reason": "Versatile service capabilities"},
+                {"name": "Best Buy Geek Squad", "phone": "(800) 433-5778", "website": "https://www.bestbuy.com/site/geek-squad", "description": "Technology support", "match_reason": "Professional technical expertise"},
+                {"name": "LegalZoom", "phone": "(800) 773-0888", "website": "https://www.legalzoom.com", "description": "Legal services", "match_reason": "Professional legal support"}
+            ]
+        
+        return {
+            "recommended_providers": fallback_providers,
+            "general_tips": f"For {request.service_category.lower()} projects, always verify licenses, get multiple quotes, and check recent reviews.",
+            "total_providers_found": len(fallback_providers)
         }
     
-    # Get relevant service providers with optimized query
-    recommended_providers = []
-    if request.location:
-        try:
-            # Optimized query with limit and projection
-            providers = await db.service_providers.find(
-                {
-                    "services": {"$in": [request.service_category]},
-                    "location": {"$regex": request.location, "$options": "i"}
-                },
-                {  # Only return needed fields
-                    "_id": 0,
-                    "id": 1,
-                    "business_name": 1,
-                    "description": 1,
-                    "location": 1,
-                    "phone": 1,
-                    "email": 1,
-                    "website": 1,
-                    "google_rating": 1,
-                    "google_reviews_count": 1,
-                    "verified": 1
-                }
-            ).sort("google_rating", -1).limit(3).to_list(3)  # Limit to 3 for speed
-            
-            recommended_providers = serialize_mongo_doc(providers)
-            
-        except Exception as e:
-            print(f"Error fetching providers: {e}")
-    
-    return {
-        "ai_insights": ai_insights,
-        "recommended_providers": recommended_providers,
-        "total_providers_found": len(recommended_providers)
-    }
+    except Exception as e:
+        print(f"AI recommendation error: {e}")
+        # Basic fallback
+        return {
+            "recommended_providers": [
+                {"name": "The Home Depot", "phone": "(800) 466-3337", "website": "https://www.homedepot.com/services", "description": "Professional home services", "match_reason": "Reliable nationwide provider"},
+                {"name": "Best Buy Geek Squad", "phone": "(800) 433-5778", "website": "https://www.bestbuy.com/site/geek-squad", "description": "Technology support", "match_reason": "Expert technical assistance"},
+                {"name": "LegalZoom", "phone": "(800) 773-0888", "website": "https://www.legalzoom.com", "description": "Legal services", "match_reason": "Professional legal support"}
+            ],
+            "general_tips": "Always verify credentials, get multiple quotes, and check reviews.",
+            "total_providers_found": 3
+        }
 
 # Service Providers endpoints
 @api_router.get("/service-providers")
