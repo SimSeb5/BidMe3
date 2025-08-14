@@ -387,8 +387,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Enhanced ServiceConnect Features Testing Complete"
-  stuck_tasks: []
+    - "BidMe Marketplace Enhancements Testing Complete"
+  stuck_tasks:
+    - "Sample Data Initialization Enhancement"
   test_all: false
   test_priority: "high_first"
 
