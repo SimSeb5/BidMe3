@@ -12,7 +12,9 @@ const Dashboard = () => {
     totalRequests: 0,
     myRequests: 0,
     myBids: 0,
-    recentRequests: []
+    recentRequests: [],
+    completedProjects: 0,
+    verifiedProfessionals: 0
   });
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
