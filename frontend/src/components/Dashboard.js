@@ -24,6 +24,11 @@ const Dashboard = () => {
     fetchCategories();
   }, []);
 
+  // Add a function to refresh dashboard data
+  const refreshDashboardData = () => {
+    fetchDashboardData();
+  };
+
   const fetchCategories = async () => {
     try {
       const response = await axios.get(`${API}/categories`);
