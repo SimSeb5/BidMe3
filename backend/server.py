@@ -418,7 +418,7 @@ async def get_my_provider_profile(current_user: dict = Depends(get_current_user)
     if not profile:
         raise HTTPException(status_code=404, detail="Provider profile not found")
     
-    return profile
+    return serialize_mongo_doc(profile)
 
 @api_router.put("/provider-profile")
 async def update_provider_profile(profile_data: ProviderProfileCreate, current_user: dict = Depends(get_current_user)):
