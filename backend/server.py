@@ -420,8 +420,9 @@ async def get_service_requests(
     search: Optional[str] = None,
     sort_by: Optional[str] = "created_at",
     sort_order: Optional[str] = "desc",
-    limit: Optional[int] = 100,
-    urgency: Optional[str] = None,  # "urgent", "normal", "flexible"
+    limit: Optional[int] = 20,  # Reduced default limit for better performance
+    page: Optional[int] = 1,    # Added pagination
+    urgency: Optional[str] = None,
     has_images: Optional[bool] = None,
     show_best_bids_only: Optional[bool] = None,
     min_budget: Optional[float] = None,
@@ -431,25 +432,7 @@ async def get_service_requests(
     longitude: Optional[float] = None
 ):
     """
-    Get service requests with comprehensive filtering options
-    
-    Enhanced Parameters:
-    - category: Filter by main service category
-    - subcategory: Filter by service subcategory
-    - status: Filter by request status (open, in_progress, completed, cancelled)
-    - location: Filter by location (partial match)
-    - budget_min/budget_max: Budget range filters
-    - deadline_before/deadline_after: Deadline range filters (ISO format)
-    - search: Search in title and description
-    - sort_by: Sort field (created_at, budget_min, budget_max, deadline, title, bid_count)
-    - sort_order: Sort order (asc, desc)
-    - limit: Maximum number of results (1-500)
-    - urgency: Filter by urgency level
-    - has_images: Filter requests that include images
-    - show_best_bids_only: Only show requests with best bids visible
-    - min_budget/max_budget: Alternative budget filters
-    - distance_km: Maximum distance from coordinates
-    - latitude/longitude: Coordinates for distance-based filtering
+    Get service requests with optimized performance and pagination
     """
     filter_dict = {}
     
@@ -458,13 +441,6 @@ async def get_service_requests(
         filter_dict["category"] = category
     if status:
         filter_dict["status"] = status
-    
-    # Subcategory filter (search in title/description for subcategory keywords)
-    if subcategory:
-        filter_dict["$or"] = [
-            {"title": {"$regex": subcategory, "$options": "i"}},
-            {"description": {"$regex": subcategory, "$options": "i"}}
-        ]
     
     # Location filter (case-insensitive partial match)
     if location:
@@ -481,62 +457,27 @@ async def get_service_requests(
         budget_filter["$lte"] = max_bud
     
     if budget_filter:
-        # Filter where either budget_min or budget_max falls within range
         filter_dict["$or"] = [
             {"budget_min": budget_filter},
-            {"budget_max": budget_filter},
-            {"$and": [
-                {"budget_min": {"$lte": max_bud if max_bud else float('inf')}},
-                {"budget_max": {"$gte": min_bud if min_bud else 0}}
-            ]}
+            {"budget_max": budget_filter}
         ]
     
-    # Deadline filters
-    if deadline_before or deadline_after:
-        deadline_filter = {}
-        if deadline_before:
-            try:
-                deadline_filter["$lte"] = datetime.fromisoformat(deadline_before.replace('Z', '+00:00'))
-            except ValueError:
-                pass
-        if deadline_after:
-            try:
-                deadline_filter["$gte"] = datetime.fromisoformat(deadline_after.replace('Z', '+00:00'))
-            except ValueError:
-                pass
-        if deadline_filter:
-            filter_dict["deadline"] = deadline_filter
-    
-    # Search filter (in title and description)
+    # Search filter (simplified for performance)
     if search:
-        search_filter = [
-            {"title": {"$regex": search, "$options": "i"}},
-            {"description": {"$regex": search, "$options": "i"}}
-        ]
-        # Combine with existing $or if it exists
-        if "$or" in filter_dict:
-            filter_dict["$and"] = [{"$or": filter_dict["$or"]}, {"$or": search_filter}]
-            del filter_dict["$or"]
-        else:
-            filter_dict["$or"] = search_filter
+        filter_dict["$text"] = {"$search": search}
     
-    # Urgency filter (based on deadline)
-    if urgency:
+    # Urgency filter (simplified)
+    if urgency == "urgent":
         now = datetime.utcnow()
-        if urgency == "urgent":
-            # Deadline within 7 days or marked as urgent in description
-            urgent_deadline = now + timedelta(days=7)
-            filter_dict["$or"] = [
-                {"deadline": {"$lte": urgent_deadline, "$ne": None}},
-                {"description": {"$regex": "urgent|asap|emergency|immediate", "$options": "i"}}
-            ]
-        elif urgency == "flexible":
-            # Deadline more than 30 days away or no deadline
-            flexible_deadline = now + timedelta(days=30)
-            filter_dict["$or"] = [
-                {"deadline": {"$gte": flexible_deadline}},
-                {"deadline": None}
-            ]
+        urgent_deadline = now + timedelta(days=7)
+        filter_dict["deadline"] = {"$lte": urgent_deadline, "$ne": None}
+    elif urgency == "flexible":
+        now = datetime.utcnow()
+        flexible_deadline = now + timedelta(days=30)
+        filter_dict["$or"] = [
+            {"deadline": {"$gte": flexible_deadline}},
+            {"deadline": None}
+        ]
     
     # Images filter
     if has_images is not None:
@@ -553,45 +494,76 @@ async def get_service_requests(
         filter_dict["show_best_bids"] = True
     
     # Sort configuration
-    valid_sort_fields = ["created_at", "budget_min", "budget_max", "deadline", "title", "bid_count"]
+    valid_sort_fields = ["created_at", "budget_min", "budget_max", "deadline", "title"]
     sort_field = sort_by if sort_by in valid_sort_fields else "created_at"
     sort_direction = -1 if sort_order == "desc" else 1
     
-    # Limit validation
-    limit = min(max(1, limit), 500)  # Between 1 and 500
+    # Pagination
+    limit = min(max(1, limit), 50)  # Max 50 items per page
+    skip = (page - 1) * limit
     
-    requests = await db.service_requests.find(filter_dict).sort(sort_field, sort_direction).limit(limit).to_list(limit)
+    # Optimized query with projection to return only needed fields
+    projection = {
+        "_id": 0,
+        "id": 1,
+        "user_id": 1,
+        "title": 1,
+        "description": 1,
+        "category": 1,
+        "budget_min": 1,
+        "budget_max": 1,
+        "deadline": 1,
+        "location": 1,
+        "status": 1,
+        "show_best_bids": 1,
+        "created_at": 1,
+        "images": 1
+    }
     
-    # Add user info and enhanced bid info for each request
+    requests = await db.service_requests.find(
+        filter_dict, 
+        projection
+    ).sort(sort_field, sort_direction).skip(skip).limit(limit).to_list(limit)
+    
+    # Batch process user info and bid counts for better performance
+    user_ids = [req["user_id"] for req in requests]
+    request_ids = [req["id"] for req in requests]
+    
+    # Get user info in batch
+    users = await db.users.find(
+        {"id": {"$in": user_ids}}, 
+        {"_id": 0, "id": 1, "first_name": 1, "last_name": 1}
+    ).to_list(len(user_ids))
+    user_map = {user["id"]: f"{user['first_name']} {user['last_name']}" for user in users}
+    
+    # Get bid counts in batch
+    bid_pipeline = [
+        {"$match": {"service_request_id": {"$in": request_ids}}},
+        {"$group": {
+            "_id": "$service_request_id",
+            "count": {"$sum": 1},
+            "avg_price": {"$avg": "$price"},
+            "min_price": {"$min": "$price"},
+            "max_price": {"$max": "$price"}
+        }}
+    ]
+    bid_stats = await db.bids.aggregate(bid_pipeline).to_list(len(request_ids))
+    bid_map = {stat["_id"]: stat for stat in bid_stats}
+    
+    # Process results efficiently
     for request in requests:
-        user = await db.users.find_one({"id": request["user_id"]})
-        if user:
-            request["user_name"] = f"{user['first_name']} {user['last_name']}"
+        # Add user info
+        request["user_name"] = user_map.get(request["user_id"], "Unknown User")
         
-        # Get comprehensive bid information
-        bid_count = await db.bids.count_documents({"service_request_id": request["id"]})
-        request["bid_count"] = bid_count
+        # Add bid info
+        bid_info = bid_map.get(request["id"], {})
+        request["bid_count"] = bid_info.get("count", 0)
+        if bid_info.get("avg_price"):
+            request["avg_bid_price"] = round(bid_info["avg_price"], 2)
+            request["min_bid_price"] = bid_info["min_price"]
+            request["max_bid_price"] = bid_info["max_price"]
         
-        # Add bid statistics if bids exist
-        if bid_count > 0:
-            pipeline = [
-                {"$match": {"service_request_id": request["id"]}},
-                {"$group": {
-                    "_id": None, 
-                    "avg_price": {"$avg": "$price"}, 
-                    "min_price": {"$min": "$price"}, 
-                    "max_price": {"$max": "$price"},
-                    "latest_bid": {"$max": "$created_at"}
-                }}
-            ]
-            bid_stats = await db.bids.aggregate(pipeline).to_list(1)
-            if bid_stats:
-                request["avg_bid_price"] = round(bid_stats[0]["avg_price"], 2)
-                request["min_bid_price"] = bid_stats[0]["min_price"]
-                request["max_bid_price"] = bid_stats[0]["max_price"]
-                request["latest_bid_time"] = bid_stats[0]["latest_bid"]
-        
-        # Calculate urgency level
+        # Calculate urgency level efficiently
         if request.get("deadline"):
             days_until_deadline = (request["deadline"] - datetime.utcnow()).days
             if days_until_deadline <= 3:
@@ -605,29 +577,6 @@ async def get_service_requests(
         
         # Add image count
         request["image_count"] = len(request.get("images", []))
-    
-    # Distance-based filtering if coordinates provided
-    if latitude is not None and longitude is not None and distance_km is not None:
-        import math
-        
-        def calculate_distance(lat1, lon1, lat2, lon2):
-            """Calculate distance using Haversine formula"""
-            R = 6371  # Earth's radius in km
-            lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
-            dlat = lat2 - lat1
-            dlon = lon2 - lon1
-            a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-            return R * 2 * math.asin(math.sqrt(a))
-        
-        # Filter requests by distance (if they have location coordinates)
-        filtered_requests = []
-        for request in requests:
-            # This would need location geocoding in a real implementation
-            # For now, we'll include all requests when coordinates are provided
-            request["distance_km"] = "Location-based filtering available with geocoding"
-            filtered_requests.append(request)
-        
-        requests = filtered_requests
     
     return serialize_mongo_doc(requests)
 
