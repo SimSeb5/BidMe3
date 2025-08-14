@@ -976,6 +976,16 @@ def main():
     tester.test_get_bid_messages_as_provider()
     tester.test_get_bid_messages_as_customer()
     
+    # AI Recommendations tests (NEW - PRIMARY FOCUS)
+    print("\n🤖 Testing AI Recommendations (PRIMARY FOCUS)...")
+    tester.test_service_providers_endpoint()
+    tester.test_service_providers_with_filters()
+    tester.test_ai_recommendations_basic()
+    tester.test_ai_recommendations_without_location()
+    tester.test_ai_recommendations_different_categories()
+    tester.test_ai_recommendations_with_coordinates()
+    tester.test_ai_recommendations_error_cases()
+    
     # Error case tests
     print("\n⚠️  Testing Error Cases...")
     tester.test_error_cases()
