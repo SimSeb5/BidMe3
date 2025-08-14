@@ -438,8 +438,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Service Request Form Integration"
-    - "Form Field Reordering"
+    - "Sample Data Initialization Enhancement"
   stuck_tasks:
     - "Sample Data Initialization Enhancement"
   test_all: false
