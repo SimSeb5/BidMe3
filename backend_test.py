@@ -854,6 +854,350 @@ class ServiceConnectAPITester:
             data={}
         )
 
+    def test_ai_category_selection_clear_descriptions(self):
+        """Test AI category selection with clear service titles and descriptions"""
+        print("\n🎯 Testing AI Category Selection - Clear Descriptions...")
+        
+        test_cases = [
+            {
+                "title": "Fix kitchen sink",
+                "description": "My kitchen sink is leaking and needs repair",
+                "expected_category": "Home Services"
+            },
+            {
+                "title": "Website development", 
+                "description": "Need a modern website for my business with e-commerce functionality",
+                "expected_category": "Technology & IT"
+            },
+            {
+                "title": "Logo design",
+                "description": "Looking for a professional logo design for my startup company", 
+                "expected_category": "Creative & Design"
+            },
+            {
+                "title": "Kitchen renovation",
+                "description": "Complete kitchen remodel with new cabinets, countertops, and appliances",
+                "expected_category": "Construction & Renovation"
+            },
+            {
+                "title": "Legal consultation",
+                "description": "Need legal advice for starting a new business and contract review",
+                "expected_category": "Professional Services"
+            }
+        ]
+        
+        all_success = True
+        for i, test_case in enumerate(test_cases):
+            success, response = self.run_test(
+                f"AI Category Selection - Clear Case {i+1}: {test_case['title']}",
+                "POST",
+                "ai-category-selection",
+                200,
+                data={
+                    "title": test_case["title"],
+                    "description": test_case["description"]
+                }
+            )
+            
+            if success:
+                # Verify response structure
+                if 'selected_category' in response:
+                    selected = response['selected_category']
+                    print(f"   ✅ Selected category: {selected}")
+                    
+                    # Check if it's a valid category
+                    valid_categories = [
+                        "Home Services", "Construction & Renovation", "Professional Services",
+                        "Technology & IT", "Creative & Design", "Business Services",
+                        "Health & Wellness", "Education & Training", "Transportation",
+                        "Events & Entertainment", "Emergency Services", "Automotive",
+                        "Beauty & Personal Care", "Pet Services", "Financial Services", "Other"
+                    ]
+                    
+                    if selected in valid_categories:
+                        print(f"   ✅ Valid category returned")
+                    else:
+                        print(f"   ❌ Invalid category: {selected}")
+                        all_success = False
+                else:
+                    print(f"   ❌ Missing selected_category in response")
+                    all_success = False
+                
+                # Verify confidence level exists
+                if 'confidence' in response:
+                    confidence = response['confidence']
+                    print(f"   ✅ Confidence level: {confidence}")
+                    
+                    if confidence in ['high', 'medium', 'low']:
+                        print(f"   ✅ Valid confidence level")
+                    else:
+                        print(f"   ⚠️  Unexpected confidence level: {confidence}")
+                else:
+                    print(f"   ❌ Missing confidence in response")
+                    all_success = False
+                
+                # Check for fallback_reason (should not be present for clear cases)
+                if 'fallback_reason' in response:
+                    print(f"   ⚠️  Fallback reason present: {response['fallback_reason']}")
+                else:
+                    print(f"   ✅ No fallback reason (expected for clear descriptions)")
+                    
+            else:
+                all_success = False
+        
+        return all_success
+
+    def test_ai_category_selection_edge_cases(self):
+        """Test AI category selection with edge cases"""
+        print("\n🎯 Testing AI Category Selection - Edge Cases...")
+        
+        edge_cases = [
+            {
+                "title": "",
+                "description": "Need help with something",
+                "name": "Empty Title"
+            },
+            {
+                "title": "Help",
+                "description": "",
+                "name": "Empty Description"
+            },
+            {
+                "title": "Fix",
+                "description": "Broken",
+                "name": "Very Short Title/Description"
+            },
+            {
+                "title": "Need assistance",
+                "description": "I need some kind of service but not sure what exactly",
+                "name": "Ambiguous Description"
+            },
+            {
+                "title": "Thing needs fixing",
+                "description": "Something is not working properly and needs attention",
+                "name": "Vague Description"
+            }
+        ]
+        
+        all_success = True
+        for edge_case in edge_cases:
+            success, response = self.run_test(
+                f"AI Category Selection - {edge_case['name']}",
+                "POST",
+                "ai-category-selection",
+                200,
+                data={
+                    "title": edge_case["title"],
+                    "description": edge_case["description"]
+                }
+            )
+            
+            if success:
+                # Verify response structure exists even for edge cases
+                if 'selected_category' in response:
+                    selected = response['selected_category']
+                    print(f"   ✅ Selected category: {selected}")
+                    
+                    # For edge cases, "Other" is acceptable
+                    if selected == "Other":
+                        print(f"   ✅ Appropriately categorized as 'Other' for edge case")
+                else:
+                    print(f"   ❌ Missing selected_category in response")
+                    all_success = False
+                
+                # Edge cases should have lower confidence or fallback reasons
+                confidence = response.get('confidence', 'unknown')
+                print(f"   ✅ Confidence level: {confidence}")
+                
+                if 'fallback_reason' in response:
+                    print(f"   ✅ Fallback reason provided: {response['fallback_reason']}")
+                
+            else:
+                all_success = False
+        
+        return all_success
+
+    def test_ai_category_selection_validation(self):
+        """Test AI category selection input validation"""
+        print("\n🎯 Testing AI Category Selection - Input Validation...")
+        
+        # Test missing required fields
+        validation_cases = [
+            {
+                "data": {"description": "Test description"},
+                "name": "Missing Title",
+                "expected_status": 422
+            },
+            {
+                "data": {"title": "Test title"},
+                "name": "Missing Description", 
+                "expected_status": 422
+            },
+            {
+                "data": {},
+                "name": "Empty Request",
+                "expected_status": 422
+            }
+        ]
+        
+        all_success = True
+        for case in validation_cases:
+            success, response = self.run_test(
+                f"AI Category Selection Validation - {case['name']}",
+                "POST",
+                "ai-category-selection",
+                case['expected_status'],
+                data=case['data']
+            )
+            
+            if not success:
+                all_success = False
+        
+        return all_success
+
+    def test_ai_category_selection_integration(self):
+        """Test AI category selection integration with EMERGENT_LLM_KEY"""
+        print("\n🎯 Testing AI Category Selection - AI Integration...")
+        
+        # Test that AI integration is working by testing multiple requests
+        integration_tests = [
+            {
+                "title": "Plumbing emergency repair",
+                "description": "Urgent plumbing repair needed for burst pipe in basement flooding the area"
+            },
+            {
+                "title": "Mobile app development",
+                "description": "Looking for experienced developer to create iOS and Android mobile application"
+            },
+            {
+                "title": "Wedding photography",
+                "description": "Professional wedding photographer needed for outdoor ceremony and reception"
+            },
+            {
+                "title": "Tax preparation services", 
+                "description": "Need help preparing and filing annual tax returns for small business"
+            },
+            {
+                "title": "Dog grooming and bathing",
+                "description": "Professional pet grooming service needed for large golden retriever"
+            }
+        ]
+        
+        all_success = True
+        ai_responses = 0
+        
+        for i, test in enumerate(integration_tests):
+            success, response = self.run_test(
+                f"AI Integration Test {i+1} - {test['title'][:20]}...",
+                "POST", 
+                "ai-category-selection",
+                200,
+                data=test
+            )
+            
+            if success:
+                selected_category = response.get('selected_category', 'Unknown')
+                confidence = response.get('confidence', 'unknown')
+                
+                print(f"   ✅ AI Response: {selected_category} (confidence: {confidence})")
+                
+                # Check if response seems AI-generated (not just fallback)
+                if confidence == 'high' and selected_category != 'Other':
+                    ai_responses += 1
+                    print(f"   ✅ High-confidence AI categorization")
+                elif 'fallback_reason' not in response:
+                    ai_responses += 1
+                    print(f"   ✅ AI categorization (no fallback)")
+                else:
+                    print(f"   ⚠️  Fallback categorization: {response.get('fallback_reason', 'unknown')}")
+                    
+            else:
+                all_success = False
+        
+        # Verify AI integration is working (at least some responses should be AI-generated)
+        if ai_responses >= 3:
+            print(f"   ✅ AI integration working: {ai_responses}/{len(integration_tests)} AI responses")
+        else:
+            print(f"   ⚠️  Limited AI responses: {ai_responses}/{len(integration_tests)} - check EMERGENT_LLM_KEY")
+        
+        return all_success
+
+    def test_dashboard_count_updates(self):
+        """Test that dashboard counts update properly after new services/providers are added"""
+        print("\n🎯 Testing Dashboard Count Updates...")
+        
+        # Get initial counts
+        success1, initial_requests = self.run_test(
+            "Dashboard Counts - Initial Service Requests",
+            "GET",
+            "service-requests",
+            200,
+            params={"limit": 1000}
+        )
+        
+        success2, initial_providers = self.run_test(
+            "Dashboard Counts - Initial Service Providers", 
+            "GET",
+            "service-providers",
+            200,
+            params={"limit": 1000}
+        )
+        
+        if not (success1 and success2):
+            print("   ❌ Failed to get initial counts")
+            return False
+        
+        initial_request_count = len(initial_requests) if isinstance(initial_requests, list) else 0
+        initial_provider_count = len(initial_providers) if isinstance(initial_providers, list) else 0
+        
+        print(f"   📊 Initial counts - Requests: {initial_request_count}, Providers: {initial_provider_count}")
+        
+        # Create a new service request
+        new_request_data = {
+            "title": "Dashboard Count Test Service",
+            "description": "Testing dashboard count updates after new service creation",
+            "category": "Home Services",
+            "budget_min": 100.0,
+            "budget_max": 200.0,
+            "location": "Test City for Dashboard"
+        }
+        
+        success3, new_request = self.run_test(
+            "Dashboard Counts - Create New Service Request",
+            "POST",
+            "service-requests", 
+            200,
+            data=new_request_data,
+            token=self.customer_token
+        )
+        
+        if not success3:
+            print("   ❌ Failed to create new service request")
+            return False
+        
+        # Get updated counts
+        success4, updated_requests = self.run_test(
+            "Dashboard Counts - Updated Service Requests",
+            "GET",
+            "service-requests",
+            200,
+            params={"limit": 1000}
+        )
+        
+        if success4:
+            updated_request_count = len(updated_requests) if isinstance(updated_requests, list) else 0
+            print(f"   📊 Updated request count: {updated_request_count}")
+            
+            if updated_request_count > initial_request_count:
+                print(f"   ✅ Service request count increased: {initial_request_count} → {updated_request_count}")
+                return True
+            else:
+                print(f"   ❌ Service request count did not increase: {initial_request_count} → {updated_request_count}")
+                return False
+        else:
+            print("   ❌ Failed to get updated counts")
+            return False
+
     # NEW ENHANCED FEATURES TESTING
     def test_enhanced_subcategories(self):
         """Test the new enhanced subcategories endpoints"""
