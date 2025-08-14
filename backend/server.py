@@ -331,7 +331,7 @@ async def get_my_requests(current_user: dict = Depends(get_current_user)):
         bid_count = await db.bids.count_documents({"service_request_id": request["id"]})
         request["bid_count"] = bid_count
     
-    return requests
+    return serialize_mongo_doc(requests)
 
 # Bid Routes
 @api_router.post("/bids", response_model=Bid)
