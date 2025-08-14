@@ -376,7 +376,7 @@ async def get_bids_for_request(request_id: str, current_user: dict = Depends(get
     else:
         bids = await db.bids.find({"service_request_id": request_id}).sort("created_at", -1).to_list(100)
     
-    return bids
+    return serialize_mongo_doc(bids)
 
 @api_router.get("/my-bids")
 async def get_my_bids(current_user: dict = Depends(get_current_user)):
