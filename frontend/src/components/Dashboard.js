@@ -235,7 +235,7 @@ const Dashboard = () => {
                   <div className="action-icon">👥</div>
                   <h3>Browse Providers</h3>
                   <p>Find the perfect professional for your needs</p>
-                  <Link to="/services" className="btn btn-secondary">
+                  <Link to="/providers" className="btn btn-secondary">
                     Explore
                   </Link>
                 </div>
