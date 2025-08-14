@@ -703,92 +703,68 @@ async def get_service_recommendations(request: LocationRecommendationRequest):
 async def get_service_providers(
     category: Optional[str] = None,
     location: Optional[str] = None,
-    verified_only: Optional[bool] = False,
-    min_rating: Optional[float] = None,
+    verified_only: bool = False,
+    min_rating: float = 0.0,
     latitude: Optional[float] = None,
     longitude: Optional[float] = None,
-    radius_km: Optional[float] = 50.0,
-    limit: Optional[int] = 50
+    max_distance_km: float = 50.0,
+    limit: int = 20
 ):
-    """
-    Get service providers with filtering options
-    
-    Parameters:
-    - category: Filter by service category
-    - location: Filter by location (partial match)
-    - verified_only: Show only verified providers
-    - min_rating: Minimum Google rating
-    - latitude/longitude: Center point for distance-based search
-    - radius_km: Search radius in kilometers (default: 50km)
-    - limit: Maximum number of results
-    """
-    filter_dict = {}
-    
-    # Category filter
-    if category:
-        filter_dict["services"] = {"$in": [category]}
-    
-    # Location filter
-    if location:
-        filter_dict["location"] = {"$regex": location, "$options": "i"}
-    
-    # Verified filter
-    if verified_only:
-        filter_dict["verified"] = True
-    
-    # Rating filter
-    if min_rating is not None:
-        filter_dict["google_rating"] = {"$gte": min_rating}
-    
-    # Geographic proximity filter
-    if latitude is not None and longitude is not None:
-        # MongoDB geospatial query for providers within radius
-        filter_dict["latitude"] = {
-            "$gte": latitude - (radius_km / 111.0),  # Rough conversion: 1 degree ≈ 111km
-            "$lte": latitude + (radius_km / 111.0)
-        }
-        filter_dict["longitude"] = {
-            "$gte": longitude - (radius_km / (111.0 * abs(latitude / 90.0))),
-            "$lte": longitude + (radius_km / (111.0 * abs(latitude / 90.0)))
-        }
-    
-    # Limit validation
-    limit = min(max(1, limit), 200)
-    
-    providers = await db.service_providers.find(filter_dict).sort("google_rating", -1).limit(limit).to_list(limit)
-    
-    # Calculate distance if coordinates provided
-    if latitude is not None and longitude is not None:
-        import math
+    """Get service providers with filtering options"""
+    try:
+        # Build filter query
+        filter_query = {}
         
-        def calculate_distance(lat1, lon1, lat2, lon2):
-            """Calculate distance between two points using Haversine formula"""
-            R = 6371  # Earth's radius in kilometers
-            
-            lat1_rad = math.radians(lat1)
-            lon1_rad = math.radians(lon1)
-            lat2_rad = math.radians(lat2)
-            lon2_rad = math.radians(lon2)
-            
-            dlat = lat2_rad - lat1_rad
-            dlon = lon2_rad - lon1_rad
-            
-            a = math.sin(dlat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon/2)**2
-            c = 2 * math.asin(math.sqrt(a))
-            
-            return R * c
+        if category:
+            filter_query["services"] = {"$in": [category]}
         
-        for provider in providers:
-            distance = calculate_distance(
-                latitude, longitude,
-                provider["latitude"], provider["longitude"]
-            )
-            provider["distance_km"] = round(distance, 2)
+        if location:
+            filter_query["location"] = {"$regex": location, "$options": "i"}
+            
+        if verified_only:
+            filter_query["verified"] = True
+            
+        if min_rating > 0:
+            filter_query["google_rating"] = {"$gte": min_rating}
         
-        # Sort by distance if coordinates provided
-        providers.sort(key=lambda x: x.get("distance_km", float('inf')))
-    
-    return serialize_mongo_doc(providers)
+        # Get providers
+        providers = await db.service_providers.find(filter_query).limit(limit).to_list(limit)
+        
+        # Calculate distances if coordinates provided
+        if latitude is not None and longitude is not None:
+            import math
+            
+            def haversine_distance(lat1, lon1, lat2, lon2):
+                """Calculate distance between two points using Haversine formula"""
+                R = 6371  # Earth's radius in kilometers
+                
+                lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+                dlat = lat2 - lat1
+                dlon = lon2 - lon1
+                
+                a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+                c = 2 * math.asin(math.sqrt(a))
+                return R * c
+            
+            # Add distance to each provider and filter by max distance
+            filtered_providers = []
+            for provider in providers:
+                distance = haversine_distance(
+                    latitude, longitude,
+                    provider["latitude"], provider["longitude"]
+                )
+                if distance <= max_distance_km:
+                    provider["distance_km"] = round(distance, 2)
+                    filtered_providers.append(provider)
+            
+            # Sort by distance
+            providers = sorted(filtered_providers, key=lambda x: x["distance_km"])
+        
+        return serialize_mongo_doc(providers)
+        
+    except Exception as e:
+        print(f"Error getting service providers: {e}")
+        return []
 
 @api_router.get("/service-providers/{provider_id}")
 async def get_service_provider(provider_id: str):
