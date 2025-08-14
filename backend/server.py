@@ -323,6 +323,19 @@ async def root():
 async def get_categories():
     return {"categories": SERVICE_CATEGORIES}
 
+@api_router.get("/subcategories/{category}")
+async def get_subcategories(category: str):
+    """Get subcategories for a specific main category"""
+    if category in SERVICE_SUBCATEGORIES:
+        return {"subcategories": SERVICE_SUBCATEGORIES[category]}
+    else:
+        return {"subcategories": []}
+
+@api_router.get("/all-subcategories")
+async def get_all_subcategories():
+    """Get all categories and their subcategories"""
+    return SERVICE_SUBCATEGORIES
+
 # Authentication Routes
 @api_router.post("/auth/register", response_model=Dict[str, Any])
 async def register(user_data: UserCreate):
