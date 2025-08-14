@@ -116,7 +116,7 @@ const PublicHome = () => {
 
         {/* How It Works */}
         <div className="section-clean">
-          <h2 className="section-title">How ServiceConnect Works</h2>
+          <h2 className="section-title">How BidMe Works</h2>
           <div className="quick-actions">
             <div className="action-card">
               <div className="action-icon">📝</div>
