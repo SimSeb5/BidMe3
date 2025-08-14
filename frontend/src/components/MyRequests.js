@@ -45,7 +45,7 @@ const MyRequests = () => {
     if (max) return `Up to $${max}`;
   };
 
-  if (user?.role !== 'customer') {
+  if (!(user?.roles?.includes('customer') || user?.role === 'customer')) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="container text-center">
