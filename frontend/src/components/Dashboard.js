@@ -8,6 +8,7 @@ const API = `${BACKEND_URL}`;
 
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
+  const location = useLocation();
   const [stats, setStats] = useState({
     totalRequests: 0,
     myRequests: 0,
