@@ -603,6 +603,159 @@ async def get_my_requests(current_user: dict = Depends(get_current_user)):
     
     return serialize_mongo_doc(requests)
 
+# Update service request endpoint
+@api_router.put("/service-requests/{request_id}")
+async def update_service_request(
+    request_id: str,
+    updates: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Update a service request - only by the owner"""
+    # Check if request exists and belongs to user
+    existing_request = await db.service_requests.find_one({"id": request_id})
+    if not existing_request:
+        raise HTTPException(status_code=404, detail="Service request not found")
+    
+    if existing_request["user_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Can only update your own requests")
+    
+    # Prevent updating completed/cancelled requests
+    if existing_request["status"] in ["completed", "cancelled"]:
+        raise HTTPException(status_code=400, detail="Cannot update completed or cancelled requests")
+    
+    # Validate and prepare updates
+    allowed_fields = ["title", "description", "category", "budget_min", "budget_max", "deadline", "location", "images", "show_best_bids"]
+    filtered_updates = {k: v for k, v in updates.items() if k in allowed_fields}
+    
+    if "deadline" in filtered_updates and filtered_updates["deadline"]:
+        try:
+            filtered_updates["deadline"] = datetime.fromisoformat(filtered_updates["deadline"].replace('Z', '+00:00'))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid deadline format")
+    
+    filtered_updates["updated_at"] = datetime.utcnow()
+    
+    # Update the request
+    result = await db.service_requests.update_one(
+        {"id": request_id},
+        {"$set": filtered_updates}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Service request not found")
+    
+    # Return updated request
+    updated_request = await db.service_requests.find_one({"id": request_id})
+    return serialize_mongo_doc(updated_request)
+
+# Accept a bid endpoint  
+@api_router.post("/service-requests/{request_id}/accept-bid/{bid_id}")
+async def accept_bid(
+    request_id: str,
+    bid_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Accept a bid for a service request"""
+    # Check if request exists and belongs to user
+    request_obj = await db.service_requests.find_one({"id": request_id})
+    if not request_obj:
+        raise HTTPException(status_code=404, detail="Service request not found")
+    
+    if request_obj["user_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Can only accept bids on your own requests")
+    
+    if request_obj["status"] != "open":
+        raise HTTPException(status_code=400, detail="Can only accept bids on open requests")
+    
+    # Check if bid exists
+    bid = await db.bids.find_one({"id": bid_id, "service_request_id": request_id})
+    if not bid:
+        raise HTTPException(status_code=404, detail="Bid not found")
+    
+    # Update bid status to accepted
+    await db.bids.update_one(
+        {"id": bid_id},
+        {"$set": {"status": "accepted", "updated_at": datetime.utcnow()}}
+    )
+    
+    # Update request status to in_progress
+    await db.service_requests.update_one(
+        {"id": request_id},
+        {"$set": {"status": "in_progress", "accepted_bid_id": bid_id, "updated_at": datetime.utcnow()}}
+    )
+    
+    # Reject all other bids for this request
+    await db.bids.update_many(
+        {"service_request_id": request_id, "id": {"$ne": bid_id}},
+        {"$set": {"status": "rejected", "updated_at": datetime.utcnow()}}
+    )
+    
+    return {"message": "Bid accepted successfully"}
+
+# Decline a bid endpoint
+@api_router.post("/service-requests/{request_id}/decline-bid/{bid_id}")
+async def decline_bid(
+    request_id: str,
+    bid_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Decline a bid for a service request"""
+    # Check if request exists and belongs to user
+    request_obj = await db.service_requests.find_one({"id": request_id})
+    if not request_obj:
+        raise HTTPException(status_code=404, detail="Service request not found")
+    
+    if request_obj["user_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Can only decline bids on your own requests")
+    
+    # Check if bid exists
+    bid = await db.bids.find_one({"id": bid_id, "service_request_id": request_id})
+    if not bid:
+        raise HTTPException(status_code=404, detail="Bid not found")
+    
+    if bid["status"] == "accepted":
+        raise HTTPException(status_code=400, detail="Cannot decline an accepted bid")
+    
+    # Update bid status to declined
+    await db.bids.update_one(
+        {"id": bid_id},
+        {"$set": {"status": "declined", "updated_at": datetime.utcnow()}}
+    )
+    
+    return {"message": "Bid declined successfully"}
+
+# Contact bidder endpoint
+@api_router.post("/contact-bidder/{bid_id}")
+async def contact_bidder(
+    bid_id: str,
+    message_data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Send a message to a bidder"""
+    # Check if bid exists
+    bid = await db.bids.find_one({"id": bid_id})
+    if not bid:
+        raise HTTPException(status_code=404, detail="Bid not found")
+    
+    # Check if request belongs to current user
+    request_obj = await db.service_requests.find_one({"id": bid["service_request_id"]})
+    if not request_obj or request_obj["user_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Can only contact bidders on your own requests")
+    
+    # Get bidder info
+    bidder = await db.users.find_one({"id": bid["provider_id"]})
+    if not bidder:
+        raise HTTPException(status_code=404, detail="Bidder not found")
+    
+    # Return contact information for client-side handling
+    return {
+        "bidder_email": bidder.get("email"),
+        "bidder_phone": bidder.get("phone"), 
+        "bidder_name": f"{bidder.get('first_name', '')} {bidder.get('last_name', '')}".strip(),
+        "service_title": request_obj["title"],
+        "suggested_subject": f"BidMe - Regarding your bid on: {request_obj['title']}",
+        "suggested_message": message_data.get("message", f"Hi {bidder.get('first_name', '')},\n\nI received your bid on my request '{request_obj['title']}' and would like to discuss further.\n\nBest regards,\n{current_user.first_name}")
+    }
 # Bid Routes
 @api_router.post("/bids", response_model=Bid)
 async def create_bid(bid_data: BidCreate, current_user: dict = Depends(get_current_user)):
