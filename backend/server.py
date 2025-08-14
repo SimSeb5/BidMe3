@@ -605,6 +605,36 @@ async def get_my_requests(current_user: dict = Depends(get_current_user)):
     
     return serialize_mongo_doc(requests)
 
+# Delete service request endpoint
+@api_router.delete("/service-requests/{request_id}")
+async def delete_service_request(
+    request_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a service request - only by the owner"""
+    # Check if request exists and belongs to user
+    existing_request = await db.service_requests.find_one({"id": request_id})
+    if not existing_request:
+        raise HTTPException(status_code=404, detail="Service request not found")
+    
+    if existing_request["user_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Can only delete your own requests")
+    
+    # Don't allow deletion of in-progress requests (to protect accepted bidders)
+    if existing_request["status"] == "in_progress":
+        raise HTTPException(status_code=400, detail="Cannot delete requests that are in progress. Please complete or cancel first.")
+    
+    # Delete all associated bids first
+    await db.bids.delete_many({"service_request_id": request_id})
+    
+    # Delete the service request
+    result = await db.service_requests.delete_one({"id": request_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Service request not found")
+    
+    return {"message": "Service request deleted successfully"}
+
 # Update service request endpoint
 @api_router.put("/service-requests/{request_id}")
 async def update_service_request(
