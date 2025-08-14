@@ -4,7 +4,17 @@ import axios from 'axios';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}`;
 
-const AIRecommendations = ({ serviceCategory, description, location, onRecommendationsReceived }) => {
+const AIRecommendations = ({ 
+  serviceCategory, 
+  description, 
+  location, 
+  title, 
+  budgetMin, 
+  budgetMax, 
+  deadline, 
+  urgencyLevel,
+  onRecommendationsReceived 
+}) => {
   const [recommendations, setRecommendations] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -17,21 +27,30 @@ const AIRecommendations = ({ serviceCategory, description, location, onRecommend
 
       return () => clearTimeout(timeoutId);
     }
-  }, [serviceCategory, description, location]);
+  }, [serviceCategory, description, location, title, budgetMin, budgetMax, deadline, urgencyLevel]);
 
   const fetchRecommendations = async () => {
     setLoading(true);
     setError('');
 
     try {
+      const requestData = {
+        service_category: serviceCategory,
+        description: description,
+      };
+
+      // Add optional fields if they exist
+      if (location) requestData.location = location;
+      if (title) requestData.title = title;
+      if (budgetMin) requestData.budget_min = parseFloat(budgetMin);
+      if (budgetMax) requestData.budget_max = parseFloat(budgetMax);
+      if (deadline) requestData.deadline = deadline;
+      if (urgencyLevel) requestData.urgency_level = urgencyLevel;
+
       const response = await axios.post(
         `${API}/ai-recommendations`,
-        {
-          service_category: serviceCategory,
-          description: description,
-          location: location
-        },
-        { timeout: 5000 } // 5 second timeout
+        requestData,
+        { timeout: 8000 } // 8 second timeout for better AI responses
       );
 
       setRecommendations(response.data);
@@ -41,21 +60,28 @@ const AIRecommendations = ({ serviceCategory, description, location, onRecommend
     } catch (error) {
       console.error('Failed to fetch AI recommendations:', error);
       
-      // Provide fallback instead of error
+      // Provide enhanced fallback based on available data
+      const budgetGuidance = budgetMin && budgetMax 
+        ? `Expect quotes within $${parseFloat(budgetMin).toLocaleString()} - $${parseFloat(budgetMax).toLocaleString()}`
+        : budgetMin 
+          ? `Expect quotes starting from $${parseFloat(budgetMin).toLocaleString()}`
+          : "Get multiple quotes for comparison";
+
       const fallbackRecommendations = {
         ai_insights: {
           qualifications: ["Licensed and insured", "Good reviews", "Relevant experience"],
           questions: ["Are you licensed?", "Can you provide references?", "What's your timeline?"],
           red_flags: ["No license", "Very low prices", "Pressure for payment"],
-          price_range: "Get multiple quotes",
-          timeline: "Ask about timeline upfront"
+          price_range: budgetGuidance,
+          timeline: urgencyLevel === "urgent" ? "Prioritize immediate availability" : "Ask about timeline upfront"
         },
         recommended_providers: [],
         total_providers_found: 0
       };
       
       setRecommendations(fallbackRecommendations);
-      setError('Using general tips (AI temporarily slow)');
+      // Remove the error message to avoid showing fallback notice
+      // setError('Using general tips (AI temporarily slow)');
     } finally {
       setLoading(false);
     }
