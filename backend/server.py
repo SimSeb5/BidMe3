@@ -1925,23 +1925,73 @@ async def initialize_comprehensive_sample_data():
     business_suffixes = ["Solutions", "Services", "Group", "Associates", "Professionals", "Experts", 
                         "Specialists", "Company", "Contractors", "Consultants", "Partners", "Team"]
     
-    # Create 300+ service providers
+    # Create service providers - Start with real businesses, then add synthetic ones
     provider_users = []
     sample_providers = []
     
-    for i in range(350):  # 350 providers
-        city, lat, lng = cities[i % len(cities)]
-        service = services[i % len(services)]
-        prefix = business_prefixes[i % len(business_prefixes)]
-        suffix = business_suffixes[i % len(business_suffixes)]
+    # First, add all real businesses
+    for i, real_biz in enumerate(real_businesses):
+        # Find coordinates for the location
+        location_coords = None
+        for city_name, lat, lng in cities:
+            if city_name == real_biz["location"]:
+                location_coords = (lat, lng)
+                break
         
-        # Create varied business names
-        if i % 3 == 0:
-            business_name = f"{prefix} {service.split()[0]} {suffix}"
-        elif i % 3 == 1:
-            business_name = f"{city.split(',')[0]} {service.split()[0]} {suffix}"
-        else:
-            business_name = f"{prefix} {suffix}"
+        if not location_coords:
+            # Default to New York if location not found
+            location_coords = (40.7128, -74.0060)
+        
+        provider_data = {
+            "id": str(uuid.uuid4()),
+            "business_name": real_biz["name"],
+            "description": real_biz["description"],
+            "services": [real_biz["category"]],
+            "location": real_biz["location"], 
+            "latitude": location_coords[0],
+            "longitude": location_coords[1],
+            "phone": real_biz["phone"],
+            "email": f"info@{real_biz['name'].lower().replace(' ', '').replace('&', '').replace('.', '').replace('-', '')[:20]}.com",
+            "website": real_biz["website"],
+            "google_rating": real_biz["rating"],
+            "google_reviews_count": real_biz["reviews"],
+            "website_rating": round(real_biz["rating"] - 0.1, 1),
+            "verified": True  # All real businesses are verified
+        }
+        sample_providers.append(provider_data)
+        
+        # Create actual user accounts for first 50 real businesses
+        if i < 50:
+            provider_user = {
+                "id": str(uuid.uuid4()),
+                "email": f"provider{i+1}@bidme.com",
+                "phone": provider_data["phone"],
+                "password_hash": get_password_hash("provider123"),
+                "roles": ["customer", "provider"],
+                "first_name": real_biz["name"].split()[0],  # Use first word of business name
+                "last_name": "Provider",
+                "is_verified": True,
+                "created_at": datetime.utcnow() - timedelta(days=i),
+                "updated_at": datetime.utcnow()
+            }
+            await db.users.insert_one(provider_user)
+            provider_users.append(provider_user)
+    
+    print(f"✅ Added {len(real_businesses)} real businesses")
+    
+    # Then add synthetic businesses to reach 350+ total
+    start_index = len(real_businesses)
+    for i in range(start_index, 400):  # Generate up to 400 total providers
+        city, lat, lng = cities[i % len(cities)]
+        
+        # Use business types for realistic synthetic names
+        biz_type_idx = (i - start_index) % len(business_types)
+        business_name, service, description = business_types[biz_type_idx]
+        
+        # Add number suffix for uniqueness
+        if i >= start_index + len(business_types):
+            sequence = (i - start_index) // len(business_types) + 1
+            business_name = f"{business_name} #{sequence}"
         
         # Realistic ratings (mostly high with some variation)
         base_rating = 3.8 + (i % 15) * 0.08  # Range from 3.8 to 4.9
@@ -1950,30 +2000,30 @@ async def initialize_comprehensive_sample_data():
         provider_data = {
             "id": str(uuid.uuid4()),
             "business_name": business_name,
-            "description": f"Professional {service.lower()} provider with over {3 + i%20} years of experience. Licensed, insured, and highly rated by customers across {city.split(',')[0]}. Specializing in quality workmanship and customer satisfaction.",
-            "services": [service, services[(i+1) % len(services)]] if i % 2 == 0 else [service],  # Some have multiple services
+            "description": f"{description} Located in {city.split(',')[0]} with over {3 + i%20} years of experience. Licensed, insured, and highly rated by customers.",
+            "services": [service],
             "location": city,
             "latitude": lat + (i%20 - 10) * 0.01,  # Add some location variation
             "longitude": lng + (i%20 - 10) * 0.01,
             "phone": f"({300 + i//50}) {100 + (i%9)}00-{1000 + i%9000:04d}",
-            "email": f"contact@provider{i+1}.com",
-            "website": f"https://provider{i+1}.com",
+            "email": f"contact@{business_name.lower().replace(' ', '').replace('#', '')}provider{i}.com",
+            "website": f"https://{business_name.lower().replace(' ', '').replace('#', '')}provider{i}.com",
             "google_rating": google_rating,
-            "google_reviews_count": 25 + i * 3 + (i%50),  # Varied review counts
+            "google_reviews_count": 25 + i * 2 + (i%30),  # Varied review counts
             "website_rating": round(google_rating - 0.1 - (i%3)*0.05, 1),
-            "verified": i % 2 == 0  # 50% verified
+            "verified": i % 3 == 0  # 33% of synthetic providers verified
         }
         sample_providers.append(provider_data)
         
-        # Create actual user accounts for first 50 providers
-        if i < 50:
+        # Create actual user accounts for first 50 synthetic providers (continuing from real businesses)
+        if i < start_index + 50:
             provider_user = {
                 "id": str(uuid.uuid4()),
                 "email": f"provider{i+1}@bidme.com",
                 "phone": provider_data["phone"],
                 "password_hash": get_password_hash("provider123"),
                 "roles": ["customer", "provider"],
-                "first_name": prefix,
+                "first_name": business_name.split()[0],  # Use first word of business name
                 "last_name": "Provider",
                 "is_verified": True,
                 "created_at": datetime.utcnow() - timedelta(days=i),
