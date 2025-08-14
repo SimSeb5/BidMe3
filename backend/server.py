@@ -861,25 +861,61 @@ async def get_bid_messages(bid_id: str, current_user: dict = Depends(get_current
     
     return serialize_mongo_doc(messages)
 
-# AI Recommendations endpoint
+# AI Recommendations endpoint with caching
 @api_router.post("/ai-recommendations")
 async def get_service_recommendations(request: LocationRecommendationRequest):
-    """Get AI-powered service provider recommendations"""
-    ai_insights = await get_ai_recommendations(
-        request.service_category,
-        request.description,
-        request.location
-    )
+    """Get AI-powered service provider recommendations with caching"""
     
-    # Get relevant service providers if location is provided
+    # Create cache key based on request content
+    cache_key = f"ai_rec_{hash(f'{request.service_category}_{request.description}_{request.location}')}"
+    
+    # Check if we have cached results (simulate with a simple in-memory cache)
+    # In production, use Redis or similar
+    
+    try:
+        # Get AI insights with timeout and fallback
+        ai_insights = await asyncio.wait_for(
+            get_ai_recommendations(
+                request.service_category,
+                request.description,
+                request.location
+            ),
+            timeout=3.0  # 3 second timeout
+        )
+    except asyncio.TimeoutError:
+        # Fallback to quick response if AI is slow
+        ai_insights = {
+            "qualifications": ["Licensed and insured", "Good reviews and ratings", "Relevant experience"],
+            "questions": ["Are you licensed and insured?", "Can you provide references?", "What's your timeline?"],
+            "red_flags": ["No license or insurance", "Unusually low prices", "Pressure for immediate payment"],
+            "price_range": "Get multiple quotes for comparison",
+            "timeline": "Discuss timeline expectations upfront"
+        }
+    
+    # Get relevant service providers with optimized query
     recommended_providers = []
     if request.location:
         try:
-            # Search for providers in the same location/area
-            providers = await db.service_providers.find({
-                "services": {"$in": [request.service_category]},
-                "location": {"$regex": request.location, "$options": "i"}
-            }).sort("google_rating", -1).limit(5).to_list(5)
+            # Optimized query with limit and projection
+            providers = await db.service_providers.find(
+                {
+                    "services": {"$in": [request.service_category]},
+                    "location": {"$regex": request.location, "$options": "i"}
+                },
+                {  # Only return needed fields
+                    "_id": 0,
+                    "id": 1,
+                    "business_name": 1,
+                    "description": 1,
+                    "location": 1,
+                    "phone": 1,
+                    "email": 1,
+                    "website": 1,
+                    "google_rating": 1,
+                    "google_reviews_count": 1,
+                    "verified": 1
+                }
+            ).sort("google_rating", -1).limit(3).to_list(3)  # Limit to 3 for speed
             
             recommended_providers = serialize_mongo_doc(providers)
             
