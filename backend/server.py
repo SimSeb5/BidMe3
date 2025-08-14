@@ -1776,31 +1776,329 @@ async def startup_event():
     await create_database_indexes()
 
 async def initialize_comprehensive_sample_data():
-    """Initialize the database with comprehensive sample data including bids"""
+    """Initialize the database with HUNDREDS of comprehensive sample data"""
     
-    # Check if we have comprehensive data (60+ providers and 55+ requests)
+    # Always clear existing data and create fresh comprehensive dataset
     existing_providers = await db.service_providers.count_documents({})
     existing_requests = await db.service_requests.count_documents({})
     
-    if existing_providers >= 60 and existing_requests >= 55:
-        print(f"Comprehensive sample data already exists ({existing_providers} providers, {existing_requests} requests)")
-        return
+    print(f"Creating HUNDREDS of comprehensive BidMe marketplace data (clearing existing: {existing_providers} providers, {existing_requests} requests)")
     
-    print(f"Initializing comprehensive BidMe sample data (current: {existing_providers} providers, {existing_requests} requests)")
+    # Clear ALL existing data for fresh start
+    await db.service_providers.delete_many({})
+    await db.service_requests.delete_many({})
+    await db.bids.delete_many({})
+    await db.users.delete_many({"email": {"$regex": "@bidme.com|@provider|@demo"}})
+    print("✅ Cleared all existing marketplace data")
     
-    # Clear existing data to ensure clean slate for comprehensive data
-    if existing_providers > 0:
-        await db.service_providers.delete_many({})
-        print(f"Cleared {existing_providers} existing providers")
+    # Sample images (using placeholder image service)
+    sample_images = [
+        "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNmMGY0ZjgiLz4KPHRleHQgeD0iMjAwIiB5PSIxNTAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzM3NDE1MSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+S2l0Y2hlbiBSZW5vdmF0aW9uPC90ZXh0Pgo8L3N2Zz4K",
+        "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNlZGY0ZmYiLz4KPHRleHQgeD0iMjAwIiB5PSIxNTAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzM3NDE1MSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UGx1bWJpbmcgV29yazwvdGV4dD4KPC9zdmc+",
+        "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNmZWY5ZTciLz4KPHRleHQgeD0iMjAwIiB5PSIxNTAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzM3NDE1MSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+V2ViIERldmVsb3BtZW50PC90ZXh0Pgo8L3N2Zz4K",
+        "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNlZGY0ZmYiLz4KPHRleHQgeD0iMjAwIiB5PSIxNTAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzM3NDE1MSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Q29uc3RydWN0aW9uPC90ZXh0Pgo8L3N2Zz4K"
+    ]
     
-    if existing_requests > 0:
-        await db.service_requests.delete_many({})
-        await db.bids.delete_many({})
-        print(f"Cleared {existing_requests} existing requests and associated bids")
+    # Create comprehensive demo users
+    demo_users = []
+    for i in range(25):
+        demo_user = {
+            "id": str(uuid.uuid4()),
+            "email": f"customer{i+1}@bidme.com",
+            "phone": f"(555) {100 + i:03d}-{1000 + i:04d}",
+            "password_hash": get_password_hash("password123"),
+            "roles": ["customer"],
+            "first_name": f"Customer{i+1}",
+            "last_name": "User",
+            "is_verified": True,
+            "created_at": datetime.utcnow() - timedelta(days=i*5),
+            "updated_at": datetime.utcnow()
+        }
+        await db.users.insert_one(demo_user)
+        demo_users.append(demo_user)
     
-    # Clear existing users except admin accounts
-    await db.users.delete_many({"email": {"$regex": "@bidme.com"}})
-    print("Cleared existing demo users")
+    # Expanded city coverage - 50 major US cities
+    cities = [
+        ("New York, NY", 40.7128, -74.0060), ("Los Angeles, CA", 34.0522, -118.2437),
+        ("Chicago, IL", 41.8781, -87.6298), ("Houston, TX", 29.7604, -95.3698),
+        ("Phoenix, AZ", 33.4484, -112.0740), ("Philadelphia, PA", 39.9526, -75.1652),
+        ("San Antonio, TX", 29.4241, -98.4936), ("San Diego, CA", 32.7157, -117.1611),
+        ("Dallas, TX", 32.7767, -96.7970), ("San Jose, CA", 37.3382, -121.8863),
+        ("Austin, TX", 30.2672, -97.7431), ("Jacksonville, FL", 30.3322, -81.6557),
+        ("Fort Worth, TX", 32.7555, -97.3308), ("Columbus, OH", 39.9612, -82.9988),
+        ("Charlotte, NC", 35.2271, -80.8431), ("San Francisco, CA", 37.7749, -122.4194),
+        ("Indianapolis, IN", 39.7684, -86.1581), ("Seattle, WA", 47.6062, -122.3321),
+        ("Denver, CO", 39.7392, -104.9903), ("Boston, MA", 42.3601, -71.0589),
+        ("El Paso, TX", 31.7619, -106.4850), ("Detroit, MI", 42.3314, -83.0458),
+        ("Nashville, TN", 36.1627, -86.7816), ("Portland, OR", 45.5152, -122.6784),
+        ("Memphis, TN", 35.1495, -90.0490), ("Oklahoma City, OK", 35.4676, -97.5164),
+        ("Las Vegas, NV", 36.1699, -115.1398), ("Louisville, KY", 38.2027, -85.7585),
+        ("Baltimore, MD", 39.2904, -76.6122), ("Milwaukee, WI", 43.0389, -87.9065),
+        ("Albuquerque, NM", 35.0844, -106.6504), ("Tucson, AZ", 32.2226, -110.9747),
+        ("Fresno, CA", 36.7378, -119.7871), ("Sacramento, CA", 38.5816, -121.4944),
+        ("Mesa, AZ", 33.4152, -111.8315), ("Kansas City, MO", 39.0997, -94.5786),
+        ("Atlanta, GA", 33.7490, -84.3880), ("Long Beach, CA", 33.7701, -118.1937),
+        ("Colorado Springs, CO", 38.8339, -104.8214), ("Raleigh, NC", 35.7796, -78.6382),
+        ("Miami, FL", 25.7617, -80.1918), ("Virginia Beach, VA", 36.8529, -75.9780),
+        ("Omaha, NE", 41.2565, -95.9345), ("Oakland, CA", 37.8044, -122.2711),
+        ("Minneapolis, MN", 44.9778, -93.2650), ("Tulsa, OK", 36.1540, -95.9928),
+        ("Arlington, TX", 32.7357, -97.1081), ("New Orleans, LA", 29.9511, -90.0715),
+        ("Wichita, KS", 37.6872, -97.3301), ("Cleveland, OH", 41.4993, -81.6944)
+    ]
+    
+    services = ["Home Services", "Construction & Renovation", "Professional Services", "Technology & IT", 
+                "Creative & Design", "Business Services", "Health & Wellness", "Education & Training", 
+                "Transportation", "Events & Entertainment", "Emergency Services", "Automotive", 
+                "Beauty & Personal Care", "Pet Services", "Financial Services"]
+    
+    business_prefixes = ["Elite", "Premier", "Pro", "Expert", "Master", "Quality", "Reliable", "Professional", 
+                        "Certified", "Trusted", "Superior", "Premium", "Advanced", "Skilled", "Experienced"]
+    
+    business_suffixes = ["Solutions", "Services", "Group", "Associates", "Professionals", "Experts", 
+                        "Specialists", "Company", "Contractors", "Consultants", "Partners", "Team"]
+    
+    # Create 300+ service providers
+    provider_users = []
+    sample_providers = []
+    
+    for i in range(350):  # 350 providers
+        city, lat, lng = cities[i % len(cities)]
+        service = services[i % len(services)]
+        prefix = business_prefixes[i % len(business_prefixes)]
+        suffix = business_suffixes[i % len(business_suffixes)]
+        
+        # Create varied business names
+        if i % 3 == 0:
+            business_name = f"{prefix} {service.split()[0]} {suffix}"
+        elif i % 3 == 1:
+            business_name = f"{city.split(',')[0]} {service.split()[0]} {suffix}"
+        else:
+            business_name = f"{prefix} {suffix}"
+        
+        # Realistic ratings (mostly high with some variation)
+        base_rating = 3.8 + (i % 15) * 0.08  # Range from 3.8 to 4.9
+        google_rating = round(min(4.9, base_rating + (i % 3) * 0.05), 1)
+        
+        provider_data = {
+            "id": str(uuid.uuid4()),
+            "business_name": business_name,
+            "description": f"Professional {service.lower()} provider with over {3 + i%20} years of experience. Licensed, insured, and highly rated by customers across {city.split(',')[0]}. Specializing in quality workmanship and customer satisfaction.",
+            "services": [service, services[(i+1) % len(services)]] if i % 2 == 0 else [service],  # Some have multiple services
+            "location": city,
+            "latitude": lat + (i%20 - 10) * 0.01,  # Add some location variation
+            "longitude": lng + (i%20 - 10) * 0.01,
+            "phone": f"({300 + i//50}) {100 + (i%9)}00-{1000 + i%9000:04d}",
+            "email": f"contact@provider{i+1}.com",
+            "website": f"https://provider{i+1}.com",
+            "google_rating": google_rating,
+            "google_reviews_count": 25 + i * 3 + (i%50),  # Varied review counts
+            "website_rating": round(google_rating - 0.1 - (i%3)*0.05, 1),
+            "verified": i % 2 == 0  # 50% verified
+        }
+        sample_providers.append(provider_data)
+        
+        # Create actual user accounts for first 50 providers
+        if i < 50:
+            provider_user = {
+                "id": str(uuid.uuid4()),
+                "email": f"provider{i+1}@bidme.com",
+                "phone": provider_data["phone"],
+                "password_hash": get_password_hash("provider123"),
+                "roles": ["customer", "provider"],
+                "first_name": prefix,
+                "last_name": "Provider",
+                "is_verified": True,
+                "created_at": datetime.utcnow() - timedelta(days=i),
+                "updated_at": datetime.utcnow()
+            }
+            await db.users.insert_one(provider_user)
+            provider_users.append(provider_user)
+    
+    # Insert all providers
+    for provider_data in sample_providers:
+        provider = ServiceProvider(**provider_data)
+        await db.service_providers.insert_one(provider.dict())
+    
+    print(f"✅ Created {len(sample_providers)} comprehensive service providers")
+    
+    # Create 500+ service requests with variety
+    request_templates = [
+        # Home Services
+        ("Emergency Plumbing Repair", "URGENT: {specific} issue needs immediate attention. Water damage risk.", "Home Services"),
+        ("Kitchen Renovation Project", "Complete kitchen remodel including {specific}. Looking for experienced contractors.", "Construction & Renovation"),
+        ("Professional House Cleaning", "Weekly cleaning service needed for {specific} home. Eco-friendly preferred.", "Home Services"),
+        ("Electrical Work Required", "Need licensed electrician for {specific} installation and safety inspection.", "Home Services"),
+        ("Bathroom Remodeling", "Full bathroom renovation with {specific}. Modern design preferred.", "Construction & Renovation"),
+        ("HVAC System Service", "{specific} HVAC system needs professional maintenance and inspection.", "Home Services"),
+        ("Landscaping Design", "Front and back yard landscaping with {specific} and irrigation system.", "Home Services"),
+        ("Interior Painting Project", "Professional painting for {specific} rooms. High-quality finish required.", "Construction & Renovation"),
+        ("Roofing Inspection", "Comprehensive roof inspection and {specific} repairs needed.", "Construction & Renovation"),
+        ("Flooring Installation", "{specific} flooring installation for main living areas.", "Construction & Renovation"),
+        
+        # Technology & IT
+        ("Website Development", "Professional website for {specific} business with e-commerce capabilities.", "Technology & IT"),
+        ("Mobile App Creation", "Custom mobile app for {specific} with user-friendly interface.", "Technology & IT"),
+        ("IT Support Services", "Comprehensive IT support for {specific} business operations.", "Technology & IT"),
+        ("Database Management", "Professional database design and {specific} optimization needed.", "Technology & IT"),
+        ("Cybersecurity Audit", "Complete security audit for {specific} systems and data protection.", "Technology & IT"),
+        ("Cloud Migration", "Migrate {specific} business systems to cloud infrastructure.", "Technology & IT"),
+        ("Software Development", "Custom software solution for {specific} business processes.", "Technology & IT"),
+        ("Network Setup", "Professional network installation for {specific} office space.", "Technology & IT"),
+        
+        # Creative & Design
+        ("Logo Design Project", "Professional logo design for {specific} brand identity.", "Creative & Design"),
+        ("Graphic Design Work", "Marketing materials design including {specific} for business promotion.", "Creative & Design"),
+        ("Photography Services", "Professional photography for {specific} event coverage.", "Creative & Design"),
+        ("Video Production", "High-quality video content creation for {specific} marketing campaign.", "Creative & Design"),
+        ("Web Design Project", "Modern web design with {specific} functionality and responsive layout.", "Creative & Design"),
+        ("Branding Package", "Complete brand identity package including {specific} and guidelines.", "Creative & Design"),
+        ("Content Creation", "Professional content writing for {specific} marketing materials.", "Creative & Design"),
+        
+        # Professional Services
+        ("Legal Consultation", "Legal advice needed for {specific} business matter and documentation.", "Professional Services"),
+        ("Accounting Services", "Professional bookkeeping and {specific} financial management.", "Professional Services"),
+        ("Business Consulting", "Strategic business consulting for {specific} growth and optimization.", "Professional Services"),
+        ("Tax Preparation", "Comprehensive tax preparation for {specific} with quarterly planning.", "Professional Services"),
+        ("Real Estate Services", "Professional real estate assistance for {specific} property transaction.", "Professional Services"),
+        
+        # Health & Wellness
+        ("Personal Training", "Certified personal trainer for {specific} fitness goals and nutrition guidance.", "Health & Wellness"),
+        ("Massage Therapy", "Professional massage therapy for {specific} wellness and stress relief.", "Health & Wellness"),
+        ("Nutrition Counseling", "Professional nutrition consultation for {specific} dietary requirements.", "Health & Wellness"),
+        
+        # Business Services
+        ("Marketing Campaign", "Comprehensive marketing strategy for {specific} business growth.", "Business Services"),
+        ("Administrative Support", "Professional administrative services for {specific} business operations.", "Business Services"),
+        ("Event Planning", "Complete event planning for {specific} with venue and catering coordination.", "Events & Entertainment"),
+        
+        # Transportation
+        ("Moving Services", "Professional moving service for {specific} relocation with packing.", "Transportation"),
+        ("Delivery Services", "Reliable delivery service for {specific} business operations.", "Transportation"),
+        
+        # Other categories
+        ("Pet Grooming", "Professional pet grooming for {specific} with nail trimming and bath.", "Pet Services"),
+        ("Auto Repair", "Professional automotive repair for {specific} maintenance and inspection.", "Automotive"),
+        ("Financial Planning", "Professional financial planning for {specific} investment strategy.", "Financial Services"),
+        ("Beauty Services", "Professional beauty services for {specific} special occasion.", "Beauty & Personal Care")
+    ]
+    
+    specifics = ["luxury", "commercial", "residential", "small business", "large enterprise", "startup", 
+                "family", "professional", "modern", "traditional", "eco-friendly", "high-end", "budget-conscious",
+                "custom", "standard", "premium", "basic", "advanced", "comprehensive", "specialized"]
+    
+    # Create 600+ service requests
+    sample_requests = []
+    for i in range(650):  # 650 service requests
+        template = request_templates[i % len(request_templates)]
+        title_template, desc_template, category = template
+        specific = specifics[i % len(specifics)]
+        
+        title = title_template.replace("{specific}", specific)
+        description = desc_template.replace("{specific}", specific)
+        
+        # Add uniqueness for duplicates
+        if i >= len(request_templates):
+            title += f" - Project #{i - len(request_templates) + 1}"
+            description += f" Project reference: REQ{i+1000}."
+        
+        # Varied budget ranges
+        base_budget = 100 + (i % 50) * 100  # Base from $100 to $5000
+        if category == "Construction & Renovation":
+            budget_min = base_budget * 5
+            budget_max = budget_min * 3
+        elif category == "Technology & IT":
+            budget_min = base_budget * 3
+            budget_max = budget_min * 2.5
+        elif category == "Professional Services":
+            budget_min = base_budget * 2
+            budget_max = budget_min * 2
+        else:
+            budget_min = base_budget
+            budget_max = budget_min * 1.8
+        
+        # Add images to many requests
+        request_images = []
+        if i % 2 == 0:  # 50% have images
+            num_images = min(3, (i % 4) + 1)
+            request_images = sample_images[:num_images]
+        
+        # Varied statuses with more completed projects
+        if i % 5 == 0:
+            status = "completed"
+        elif i % 5 == 1:
+            status = "in_progress"
+        else:
+            status = "open"
+        
+        request_data = {
+            "id": str(uuid.uuid4()),
+            "user_id": demo_users[i % len(demo_users)]["id"],
+            "title": title,
+            "description": description,
+            "category": category,
+            "budget_min": float(budget_min),
+            "budget_max": float(budget_max),
+            "deadline": datetime.utcnow() + timedelta(days=1 + i%60) if i % 4 != 0 else None,
+            "location": cities[i % len(cities)][0],
+            "status": status,
+            "show_best_bids": i % 3 == 0,  # 33% show public bids
+            "images": request_images,
+            "created_at": datetime.utcnow() - timedelta(days=i%30, hours=i%24),
+            "updated_at": datetime.utcnow()
+        }
+        sample_requests.append(request_data)
+    
+    # Insert all requests
+    for request_data in sample_requests:
+        request = ServiceRequest(**request_data)
+        await db.service_requests.insert_one(request.dict())
+    
+    print(f"✅ Created {len(sample_requests)} comprehensive service requests")
+    
+    # Create hundreds of bids for requests
+    bid_count = 0
+    for i, request_data in enumerate(sample_requests[:200]):  # Add bids to first 200 requests
+        if request_data["status"] in ["open", "in_progress", "completed"]:
+            # Add 2-6 bids per request
+            num_bids = 2 + (i % 5)
+            for j in range(num_bids):
+                if j < len(provider_users):
+                    provider_user = provider_users[j % len(provider_users)]
+                    
+                    # Varied pricing around budget range
+                    base_price = request_data["budget_min"] + (j * (request_data["budget_max"] - request_data["budget_min"]) / num_bids)
+                    price_variation = base_price * 0.1 * (j % 3 - 1)  # ±10% variation
+                    final_price = max(request_data["budget_min"], base_price + price_variation)
+                    
+                    bid = {
+                        "id": str(uuid.uuid4()),
+                        "service_request_id": request_data["id"],
+                        "provider_id": provider_user["id"],
+                        "provider_name": f"{provider_user['first_name']} {provider_user['last_name']}",
+                        "price": final_price,
+                        "proposal": f"I can complete this {request_data['category'].lower()} project with {3 + j*2} years experience. High quality workmanship guaranteed. References available upon request. Competitive pricing and professional service.",
+                        "start_date": datetime.utcnow() + timedelta(days=1 + j*2),
+                        "duration_days": 1 + j*3,
+                        "duration_description": ["Same day", "1-3 days", "1 week", "2 weeks", "1 month"][j % 5],
+                        "status": "accepted" if (request_data["status"] != "open" and j == 0) else "pending",
+                        "created_at": datetime.utcnow() - timedelta(hours=i + j*2),
+                        "updated_at": datetime.utcnow()
+                    }
+                    await db.bids.insert_one(bid)
+                    bid_count += 1
+    
+    print(f"✅ Created {bid_count} comprehensive bids")
+    
+    print(f"""
+    🚀 COMPREHENSIVE BIDME MARKETPLACE CREATED:
+    📊 {len(sample_providers)} Service Providers (175 verified)
+    📋 {len(sample_requests)} Service Requests ({len([r for r in sample_requests if r['status'] == 'completed'])} completed)
+    💰 {bid_count} Bids with realistic pricing
+    👥 {len(demo_users)} Demo customers + {len(provider_users)} Provider accounts
+    🌍 Coverage across {len(cities)} major US cities
+    📱 Demo access: demo@bidme.com / password123
+    🏢 Provider access: provider1-50@bidme.com / provider123
+    """)
     
     # Sample images (using placeholder image service)
     sample_images = [
