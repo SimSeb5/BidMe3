@@ -161,6 +161,30 @@ class BidMessageCreate(BaseModel):
     bid_id: str
     message: str
 
+class LocationRecommendationRequest(BaseModel):
+    service_category: str
+    description: str
+    location: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+class ServiceProvider(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    business_name: str
+    description: str
+    services: List[str]
+    location: str
+    latitude: float
+    longitude: float
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    google_rating: float = 0.0
+    google_reviews_count: int = 0
+    website_rating: float = 0.0
+    verified: bool = False
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
 # Utility functions
 def serialize_mongo_doc(doc):
     """Convert MongoDB document to JSON serializable format"""
