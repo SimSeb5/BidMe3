@@ -265,12 +265,13 @@ async def login(user_credentials: UserLogin):
         data={"sub": user["id"]}, expires_delta=access_token_expires
     )
     
-    user.pop("password_hash")
+    user_dict = serialize_mongo_doc(user)
+    user_dict.pop("password_hash", None)
     
     return {
         "access_token": access_token,
         "token_type": "bearer",
-        "user": user
+        "user": user_dict
     }
 
 @api_router.get("/auth/me")
