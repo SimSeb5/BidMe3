@@ -83,7 +83,7 @@ const AIRecommendations = ({ serviceCategory, description, location, onRecommend
       };
       
       setRecommendations(fallbackRecommendations);
-      setError('Using general recommendations (AI service temporarily unavailable)');
+      setError('Using general recommendations (AI temporarily unavailable)');
     } finally {
       setLoading(false);
       setTimeoutReached(false);
@@ -132,17 +132,17 @@ const AIRecommendations = ({ serviceCategory, description, location, onRecommend
         <div className="loading-content">
           <div className="spinner"></div>
           <div className="loading-text">
-            <p>🤖 Getting AI-powered recommendations...</p>
+            <p>🤖 Getting AI recommendations...</p>
             {timeoutReached && (
               <p className="text-sm text-yellow-600 mt-2">
-                ⏱️ This is taking longer than usual. Getting general recommendations...
+                ⏱️ Taking longer than usual, getting general tips...
               </p>
             )}
           </div>
         </div>
         <div className="loading-tips">
           <p className="text-xs text-gray-500">
-            💡 While you wait, consider adding more details to your description for better recommendations
+            💡 Tip: Add more details for better recommendations
           </p>
         </div>
       </div>
@@ -166,7 +166,7 @@ const AIRecommendations = ({ serviceCategory, description, location, onRecommend
         <div className="prompt-content">
           <span className="text-2xl">🤖</span>
           <p className="text-sm text-gray-600 mt-2">
-            Fill in the service category and description to get AI-powered recommendations!
+            Fill in category and description for AI recommendations!
           </p>
         </div>
       </div>
@@ -178,8 +178,8 @@ const AIRecommendations = ({ serviceCategory, description, location, onRecommend
   return (
     <div className="ai-recommendations">
       {error && (
-        <div className="ai-fallback-notice">
-          <p className="text-sm text-orange-600 mb-3">ℹ️ {error}</p>
+        <div className="ai-fallback-notice mb-3">
+          <p className="text-sm text-orange-600">ℹ️ {error}</p>
         </div>
       )}
       
@@ -188,7 +188,7 @@ const AIRecommendations = ({ serviceCategory, description, location, onRecommend
         <div className="ai-insights-section">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <span className="text-2xl">🤖</span>
-            AI Recommendations for {serviceCategory}
+            AI Tips for {serviceCategory}
           </h3>
           
           <div className="grid grid-2 gap-4 mb-6">
@@ -216,7 +216,7 @@ const AIRecommendations = ({ serviceCategory, description, location, onRecommend
             
             {ai_insights.questions && (
               <div className="insight-card">
-                <h4 className="font-semibold text-blue-700 mb-2">❓ Questions to Ask</h4>
+                <h4 className="font-semibold text-blue-700 mb-2">❓ Ask Providers</h4>
                 <ul className="text-sm text-gray-700 space-y-1">
                   {ai_insights.questions.map((question, index) => (
                     <li key={index}>• {question}</li>
@@ -226,7 +226,7 @@ const AIRecommendations = ({ serviceCategory, description, location, onRecommend
             )}
             
             <div className="insight-card">
-              <h4 className="font-semibold text-purple-700 mb-2">💰 Price & Timeline</h4>
+              <h4 className="font-semibold text-purple-700 mb-2">💰 Budget & Time</h4>
               <div className="text-sm text-gray-700 space-y-1">
                 {ai_insights.price_range && (
                   <p><strong>Price:</strong> {ai_insights.price_range}</p>
@@ -244,7 +244,7 @@ const AIRecommendations = ({ serviceCategory, description, location, onRecommend
       {recommended_providers && recommended_providers.length > 0 && (
         <div className="recommended-providers-section">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            📍 Recommended Providers Near You ({total_providers_found})
+            📍 Recommended Providers ({total_providers_found})
           </h3>
           
           <div className="providers-grid">
@@ -254,16 +254,16 @@ const AIRecommendations = ({ serviceCategory, description, location, onRecommend
                   <h4 className="font-semibold text-lg text-gray-900">{provider.business_name}</h4>
                   <div className="provider-rating">
                     <span className="rating-stars">⭐ {provider.google_rating}</span>
-                    <span className="rating-count">({provider.google_reviews_count} reviews)</span>
+                    <span className="rating-count">({provider.google_reviews_count})</span>
                     {provider.verified && (
                       <span className="verified-badge">✓ Verified</span>
                     )}
                   </div>
                 </div>
                 
-                <p className="provider-description">{provider.description}</p>
+                <p className="provider-description text-sm mb-3">{provider.description}</p>
                 
-                <div className="provider-details">
+                <div className="provider-details text-xs text-gray-600 mb-3">
                   <div className="detail-item">
                     <span className="detail-icon">📍</span>
                     <span>{provider.location}</span>
@@ -275,176 +275,21 @@ const AIRecommendations = ({ serviceCategory, description, location, onRecommend
                       <span>{provider.phone}</span>
                     </div>
                   )}
-                  
-                  {provider.website && (
-                    <div className="detail-item">
-                      <span className="detail-icon">🌐</span>
-                      <a href={provider.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
-                        Visit Website
-                      </a>
-                    </div>
-                  )}
-                  
-                  {provider.distance_km && (
-                    <div className="detail-item">
-                      <span className="detail-icon">🚗</span>
-                      <span>{provider.distance_km} km away</span>
-                    </div>
-                  )}
                 </div>
                 
                 <div className="provider-actions">
                   <button
                     onClick={() => sendContactMessage(provider)}
-                    className="btn btn-primary btn-sm"
+                    className="btn btn-primary btn-sm text-xs"
                   >
-                    📧 Contact Provider
+                    📧 Contact
                   </button>
                   {provider.website && (
                     <button
                       onClick={() => window.open(provider.website, '_blank')}
-                      className="btn btn-secondary btn-sm"
+                      className="btn btn-secondary btn-sm text-xs ml-2"
                     >
-                      🌐 View Website
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default AIRecommendations;
-
-  return (
-    <div className="ai-recommendations">
-      {/* AI Insights */}
-      {ai_insights && (
-        <div className="ai-insights-section">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="text-2xl">🤖</span>
-            AI Recommendations
-          </h3>
-          
-          <div className="grid grid-2 gap-4 mb-6">
-            {ai_insights.qualifications && (
-              <div className="insight-card">
-                <h4 className="font-semibold text-green-700 mb-2">✅ Look For</h4>
-                <ul className="text-sm text-gray-700 space-y-1">
-                  {ai_insights.qualifications.map((qual, index) => (
-                    <li key={index}>• {qual}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            {ai_insights.red_flags && (
-              <div className="insight-card">
-                <h4 className="font-semibold text-red-700 mb-2">🚩 Red Flags</h4>
-                <ul className="text-sm text-gray-700 space-y-1">
-                  {ai_insights.red_flags.map((flag, index) => (
-                    <li key={index}>• {flag}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            {ai_insights.questions && (
-              <div className="insight-card">
-                <h4 className="font-semibold text-blue-700 mb-2">❓ Questions to Ask</h4>
-                <ul className="text-sm text-gray-700 space-y-1">
-                  {ai_insights.questions.map((question, index) => (
-                    <li key={index}>• {question}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            <div className="insight-card">
-              <h4 className="font-semibold text-purple-700 mb-2">💰 Price & Timeline</h4>
-              <div className="text-sm text-gray-700 space-y-1">
-                {ai_insights.price_range && (
-                  <p><strong>Price:</strong> {ai_insights.price_range}</p>
-                )}
-                {ai_insights.timeline && (
-                  <p><strong>Timeline:</strong> {ai_insights.timeline}</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Recommended Providers */}
-      {recommended_providers && recommended_providers.length > 0 && (
-        <div className="recommended-providers-section">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            📍 Recommended Providers Near You ({total_providers_found})
-          </h3>
-          
-          <div className="providers-grid">
-            {recommended_providers.map((provider) => (
-              <div key={provider.id} className="provider-card">
-                <div className="provider-header">
-                  <h4 className="font-semibold text-lg text-gray-900">{provider.business_name}</h4>
-                  <div className="provider-rating">
-                    <span className="rating-stars">⭐ {provider.google_rating}</span>
-                    <span className="rating-count">({provider.google_reviews_count} reviews)</span>
-                    {provider.verified && (
-                      <span className="verified-badge">✓ Verified</span>
-                    )}
-                  </div>
-                </div>
-                
-                <p className="provider-description">{provider.description}</p>
-                
-                <div className="provider-details">
-                  <div className="detail-item">
-                    <span className="detail-icon">📍</span>
-                    <span>{provider.location}</span>
-                  </div>
-                  
-                  {provider.phone && (
-                    <div className="detail-item">
-                      <span className="detail-icon">📞</span>
-                      <span>{provider.phone}</span>
-                    </div>
-                  )}
-                  
-                  {provider.website && (
-                    <div className="detail-item">
-                      <span className="detail-icon">🌐</span>
-                      <a href={provider.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
-                        Visit Website
-                      </a>
-                    </div>
-                  )}
-                  
-                  {provider.distance_km && (
-                    <div className="detail-item">
-                      <span className="detail-icon">🚗</span>
-                      <span>{provider.distance_km} km away</span>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="provider-actions">
-                  <button
-                    onClick={() => sendContactMessage(provider)}
-                    className="btn btn-primary btn-sm"
-                  >
-                    Contact Provider
-                  </button>
-                  {provider.website && (
-                    <button
-                      onClick={() => window.open(provider.website, '_blank')}
-                      className="btn btn-secondary btn-sm"
-                    >
-                      View Website
+                      🌐 Website
                     </button>
                   )}
                 </div>
