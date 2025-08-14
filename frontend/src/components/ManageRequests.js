@@ -281,11 +281,28 @@ const ManageRequests = () => {
                   <div className="flex justify-between items-center">
                     <div className="flex gap-3">
                       {request.status === 'open' && (
+                        <>
+                          <button
+                            onClick={() => handleEditRequest(request)}
+                            className="btn btn-secondary btn-sm"
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRequest(request.id, request.title)}
+                            className="btn btn-error btn-sm"
+                          >
+                            🗑️ Delete
+                          </button>
+                        </>
+                      )}
+
+                      {request.status === 'completed' && (
                         <button
-                          onClick={() => handleEditRequest(request)}
-                          className="btn btn-secondary btn-sm"
+                          onClick={() => handleDeleteRequest(request.id, request.title)}
+                          className="btn btn-error btn-sm"
                         >
-                          ✏️ Edit
+                          🗑️ Delete
                         </button>
                       )}
                       
