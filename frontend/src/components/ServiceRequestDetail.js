@@ -17,12 +17,16 @@ const ServiceRequestDetail = () => {
   const [showBidForm, setShowBidForm] = useState(false);
   const [bidForm, setBidForm] = useState({
     price: '',
-    proposal: ''
+    proposal: '',
+    start_date: '',
+    duration_days: '',
+    duration_description: ''
   });
   const [messages, setMessages] = useState({});
   const [newMessage, setNewMessage] = useState('');
   const [selectedBid, setSelectedBid] = useState(null);
   const [error, setError] = useState('');
+  const [selectedImageIndex, setSelectedImageIndex] = useState(null);
 
   useEffect(() => {
     fetchRequestDetails();
