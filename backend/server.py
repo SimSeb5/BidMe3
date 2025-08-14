@@ -620,9 +620,8 @@ async def delete_service_request(
     if existing_request["user_id"] != current_user.id:
         raise HTTPException(status_code=403, detail="Can only delete your own requests")
     
-    # Don't allow deletion of in-progress requests (to protect accepted bidders)
-    if existing_request["status"] == "in_progress":
-        raise HTTPException(status_code=400, detail="Cannot delete requests that are in progress. Please complete or cancel first.")
+    # Service requesters can now delete any of their requests, including in-progress ones
+    # This gives them full control over their posts
     
     # Delete all associated bids first
     await db.bids.delete_many({"service_request_id": request_id})
@@ -634,6 +633,39 @@ async def delete_service_request(
         raise HTTPException(status_code=404, detail="Service request not found")
     
     return {"message": "Service request deleted successfully"}
+
+# Update service request status endpoint
+@api_router.patch("/service-requests/{request_id}/status")
+async def update_service_request_status(
+    request_id: str,
+    status_data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Update service request status - only by the owner"""
+    # Check if request exists and belongs to user
+    existing_request = await db.service_requests.find_one({"id": request_id})
+    if not existing_request:
+        raise HTTPException(status_code=404, detail="Service request not found")
+    
+    if existing_request["user_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Can only update your own requests")
+    
+    new_status = status_data.get("status")
+    valid_statuses = ["open", "in_progress", "completed", "cancelled"]
+    
+    if new_status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
+    
+    # Update the status
+    result = await db.service_requests.update_one(
+        {"id": request_id},
+        {"$set": {"status": new_status, "updated_at": datetime.utcnow()}}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Service request not found")
+    
+    return {"message": f"Service request status updated to {new_status}"}
 
 # Update service request endpoint
 @api_router.put("/service-requests/{request_id}")
