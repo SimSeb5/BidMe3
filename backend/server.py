@@ -386,7 +386,7 @@ async def get_bids_for_request(request_id: str, current_user: dict = Depends(get
 
 @api_router.get("/my-bids")
 async def get_my_bids(current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "provider":
+    if "provider" not in current_user.get("roles", []):
         raise HTTPException(status_code=403, detail="Only providers can view bids")
     
     bids = await db.bids.find({"provider_id": current_user["id"]}).sort("created_at", -1).to_list(100)
