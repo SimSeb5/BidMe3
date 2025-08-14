@@ -1,0 +1,526 @@
+import requests
+import sys
+import json
+from datetime import datetime, timedelta
+
+class ServiceConnectAPITester:
+    def __init__(self, base_url="https://taskmate-108.preview.emergentagent.com/api"):
+        self.base_url = base_url
+        self.customer_token = None
+        self.provider_token = None
+        self.customer_user = None
+        self.provider_user = None
+        self.tests_run = 0
+        self.tests_passed = 0
+        self.service_request_id = None
+        self.bid_id = None
+
+    def run_test(self, name, method, endpoint, expected_status, data=None, token=None, params=None):
+        """Run a single API test"""
+        url = f"{self.base_url}/{endpoint}"
+        headers = {'Content-Type': 'application/json'}
+        if token:
+            headers['Authorization'] = f'Bearer {token}'
+
+        self.tests_run += 1
+        print(f"\n🔍 Testing {name}...")
+        print(f"   URL: {url}")
+        
+        try:
+            if method == 'GET':
+                response = requests.get(url, headers=headers, params=params)
+            elif method == 'POST':
+                response = requests.post(url, json=data, headers=headers)
+            elif method == 'PUT':
+                response = requests.put(url, json=data, headers=headers)
+
+            success = response.status_code == expected_status
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                try:
+                    response_data = response.json()
+                    print(f"   Response: {json.dumps(response_data, indent=2, default=str)[:200]}...")
+                    return True, response_data
+                except:
+                    return True, {}
+            else:
+                print(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
+                try:
+                    error_data = response.json()
+                    print(f"   Error: {error_data}")
+                except:
+                    print(f"   Error: {response.text}")
+                return False, {}
+
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False, {}
+
+    def test_root_endpoint(self):
+        """Test root API endpoint"""
+        return self.run_test("Root Endpoint", "GET", "", 200)
+
+    def test_categories(self):
+        """Test service categories endpoint"""
+        return self.run_test("Service Categories", "GET", "categories", 200)
+
+    def test_customer_registration(self):
+        """Test customer registration"""
+        timestamp = datetime.now().strftime('%H%M%S')
+        customer_data = {
+            "email": f"customer_{timestamp}@test.com",
+            "phone": f"555-{timestamp}",
+            "password": "TestPass123!",
+            "role": "customer",
+            "first_name": "Test",
+            "last_name": "Customer"
+        }
+        
+        success, response = self.run_test(
+            "Customer Registration",
+            "POST",
+            "auth/register",
+            200,
+            data=customer_data
+        )
+        
+        if success and 'access_token' in response:
+            self.customer_token = response['access_token']
+            self.customer_user = response['user']
+            print(f"   Customer ID: {self.customer_user['id']}")
+            return True
+        return False
+
+    def test_provider_registration(self):
+        """Test provider registration"""
+        timestamp = datetime.now().strftime('%H%M%S')
+        provider_data = {
+            "email": f"provider_{timestamp}@test.com",
+            "phone": f"555-{timestamp}",
+            "password": "TestPass123!",
+            "role": "provider",
+            "first_name": "Test",
+            "last_name": "Provider"
+        }
+        
+        success, response = self.run_test(
+            "Provider Registration",
+            "POST",
+            "auth/register",
+            200,
+            data=provider_data
+        )
+        
+        if success and 'access_token' in response:
+            self.provider_token = response['access_token']
+            self.provider_user = response['user']
+            print(f"   Provider ID: {self.provider_user['id']}")
+            return True
+        return False
+
+    def test_customer_login(self):
+        """Test customer login with existing credentials"""
+        if not self.customer_user:
+            print("❌ No customer user to test login")
+            return False
+            
+        login_data = {
+            "email": self.customer_user['email'],
+            "password": "TestPass123!"
+        }
+        
+        success, response = self.run_test(
+            "Customer Login",
+            "POST",
+            "auth/login",
+            200,
+            data=login_data
+        )
+        return success
+
+    def test_auth_me_customer(self):
+        """Test getting current user info for customer"""
+        return self.run_test(
+            "Get Current User (Customer)",
+            "GET",
+            "auth/me",
+            200,
+            token=self.customer_token
+        )
+
+    def test_auth_me_provider(self):
+        """Test getting current user info for provider"""
+        return self.run_test(
+            "Get Current User (Provider)",
+            "GET",
+            "auth/me",
+            200,
+            token=self.provider_token
+        )
+
+    def test_create_service_request(self):
+        """Test creating a service request as customer"""
+        request_data = {
+            "title": "Need Home Cleaning Service",
+            "description": "Looking for professional home cleaning service for a 3-bedroom house",
+            "category": "Home Services",
+            "budget_min": 100.0,
+            "budget_max": 200.0,
+            "deadline": (datetime.now() + timedelta(days=7)).isoformat(),
+            "location": "New York, NY",
+            "show_best_bids": True
+        }
+        
+        success, response = self.run_test(
+            "Create Service Request",
+            "POST",
+            "service-requests",
+            200,
+            data=request_data,
+            token=self.customer_token
+        )
+        
+        if success and 'id' in response:
+            self.service_request_id = response['id']
+            print(f"   Service Request ID: {self.service_request_id}")
+            return True
+        return False
+
+    def test_get_service_requests(self):
+        """Test getting all service requests"""
+        return self.run_test(
+            "Get All Service Requests",
+            "GET",
+            "service-requests",
+            200
+        )
+
+    def test_get_service_requests_by_category(self):
+        """Test getting service requests by category"""
+        return self.run_test(
+            "Get Service Requests by Category",
+            "GET",
+            "service-requests",
+            200,
+            params={"category": "Home Services"}
+        )
+
+    def test_get_service_request_detail(self):
+        """Test getting specific service request"""
+        if not self.service_request_id:
+            print("❌ No service request ID to test")
+            return False
+            
+        return self.run_test(
+            "Get Service Request Detail",
+            "GET",
+            f"service-requests/{self.service_request_id}",
+            200
+        )
+
+    def test_get_my_requests(self):
+        """Test getting customer's own requests"""
+        return self.run_test(
+            "Get My Requests",
+            "GET",
+            "my-requests",
+            200,
+            token=self.customer_token
+        )
+
+    def test_create_provider_profile(self):
+        """Test creating provider profile"""
+        profile_data = {
+            "business_name": "Test Cleaning Services",
+            "description": "Professional cleaning services with 5+ years experience",
+            "services_offered": ["Home Services", "Construction & Renovation"],
+            "website_url": "https://testcleaning.com"
+        }
+        
+        return self.run_test(
+            "Create Provider Profile",
+            "POST",
+            "provider-profile",
+            200,
+            data=profile_data,
+            token=self.provider_token
+        )
+
+    def test_get_provider_profile(self):
+        """Test getting provider profile"""
+        return self.run_test(
+            "Get Provider Profile",
+            "GET",
+            "provider-profile",
+            200,
+            token=self.provider_token
+        )
+
+    def test_update_provider_profile(self):
+        """Test updating provider profile"""
+        profile_data = {
+            "business_name": "Updated Test Cleaning Services",
+            "description": "Updated professional cleaning services with 5+ years experience",
+            "services_offered": ["Home Services", "Construction & Renovation", "Professional Services"],
+            "website_url": "https://updatedtestcleaning.com"
+        }
+        
+        return self.run_test(
+            "Update Provider Profile",
+            "PUT",
+            "provider-profile",
+            200,
+            data=profile_data,
+            token=self.provider_token
+        )
+
+    def test_create_bid(self):
+        """Test creating a bid as provider"""
+        if not self.service_request_id:
+            print("❌ No service request ID to bid on")
+            return False
+            
+        bid_data = {
+            "service_request_id": self.service_request_id,
+            "price": 150.0,
+            "proposal": "I can provide excellent cleaning service for your 3-bedroom house. I have 5+ years of experience and use eco-friendly products."
+        }
+        
+        success, response = self.run_test(
+            "Create Bid",
+            "POST",
+            "bids",
+            200,
+            data=bid_data,
+            token=self.provider_token
+        )
+        
+        if success and 'id' in response:
+            self.bid_id = response['id']
+            print(f"   Bid ID: {self.bid_id}")
+            return True
+        return False
+
+    def test_get_bids_for_request_as_owner(self):
+        """Test getting bids for request as request owner"""
+        if not self.service_request_id:
+            print("❌ No service request ID to get bids for")
+            return False
+            
+        return self.run_test(
+            "Get Bids for Request (as owner)",
+            "GET",
+            f"service-requests/{self.service_request_id}/bids",
+            200,
+            token=self.customer_token
+        )
+
+    def test_get_bids_for_request_as_bidder(self):
+        """Test getting bids for request as bidder"""
+        if not self.service_request_id:
+            print("❌ No service request ID to get bids for")
+            return False
+            
+        return self.run_test(
+            "Get Bids for Request (as bidder)",
+            "GET",
+            f"service-requests/{self.service_request_id}/bids",
+            200,
+            token=self.provider_token
+        )
+
+    def test_get_my_bids(self):
+        """Test getting provider's own bids"""
+        return self.run_test(
+            "Get My Bids",
+            "GET",
+            "my-bids",
+            200,
+            token=self.provider_token
+        )
+
+    def test_create_bid_message_from_provider(self):
+        """Test creating bid message from provider"""
+        if not self.bid_id:
+            print("❌ No bid ID to message on")
+            return False
+            
+        message_data = {
+            "bid_id": self.bid_id,
+            "message": "Hello! I'm available to start this weekend. Would that work for you?"
+        }
+        
+        return self.run_test(
+            "Create Bid Message (Provider)",
+            "POST",
+            "bid-messages",
+            200,
+            data=message_data,
+            token=self.provider_token
+        )
+
+    def test_create_bid_message_from_customer(self):
+        """Test creating bid message from customer"""
+        if not self.bid_id:
+            print("❌ No bid ID to message on")
+            return False
+            
+        message_data = {
+            "bid_id": self.bid_id,
+            "message": "That sounds great! Can you provide references from previous clients?"
+        }
+        
+        return self.run_test(
+            "Create Bid Message (Customer)",
+            "POST",
+            "bid-messages",
+            200,
+            data=message_data,
+            token=self.customer_token
+        )
+
+    def test_get_bid_messages_as_provider(self):
+        """Test getting bid messages as provider"""
+        if not self.bid_id:
+            print("❌ No bid ID to get messages for")
+            return False
+            
+        return self.run_test(
+            "Get Bid Messages (Provider)",
+            "GET",
+            f"bid-messages/{self.bid_id}",
+            200,
+            token=self.provider_token
+        )
+
+    def test_get_bid_messages_as_customer(self):
+        """Test getting bid messages as customer"""
+        if not self.bid_id:
+            print("❌ No bid ID to get messages for")
+            return False
+            
+        return self.run_test(
+            "Get Bid Messages (Customer)",
+            "GET",
+            f"bid-messages/{self.bid_id}",
+            200,
+            token=self.customer_token
+        )
+
+    def test_error_cases(self):
+        """Test various error cases"""
+        print("\n🔍 Testing Error Cases...")
+        
+        # Test unauthorized access
+        self.run_test(
+            "Unauthorized Access to My Requests",
+            "GET",
+            "my-requests",
+            401
+        )
+        
+        # Test customer trying to create bid
+        if self.service_request_id:
+            bid_data = {
+                "service_request_id": self.service_request_id,
+                "price": 100.0,
+                "proposal": "Test proposal"
+            }
+            self.run_test(
+                "Customer Trying to Create Bid",
+                "POST",
+                "bids",
+                403,
+                data=bid_data,
+                token=self.customer_token
+            )
+        
+        # Test provider trying to create service request
+        request_data = {
+            "title": "Test Request",
+            "description": "Test description",
+            "category": "Home Services"
+        }
+        self.run_test(
+            "Provider Trying to Create Service Request",
+            "POST",
+            "service-requests",
+            403,
+            data=request_data,
+            token=self.provider_token
+        )
+
+def main():
+    print("🚀 Starting ServiceConnect API Tests...")
+    print("=" * 60)
+    
+    tester = ServiceConnectAPITester()
+    
+    # Basic endpoint tests
+    tester.test_root_endpoint()
+    tester.test_categories()
+    
+    # Authentication tests
+    if not tester.test_customer_registration():
+        print("❌ Customer registration failed, stopping tests")
+        return 1
+    
+    if not tester.test_provider_registration():
+        print("❌ Provider registration failed, stopping tests")
+        return 1
+    
+    tester.test_customer_login()
+    tester.test_auth_me_customer()
+    tester.test_auth_me_provider()
+    
+    # Service request tests
+    if not tester.test_create_service_request():
+        print("❌ Service request creation failed, stopping related tests")
+        return 1
+    
+    tester.test_get_service_requests()
+    tester.test_get_service_requests_by_category()
+    tester.test_get_service_request_detail()
+    tester.test_get_my_requests()
+    
+    # Provider profile tests
+    tester.test_create_provider_profile()
+    tester.test_get_provider_profile()
+    tester.test_update_provider_profile()
+    
+    # Bidding tests
+    if not tester.test_create_bid():
+        print("❌ Bid creation failed, stopping bid-related tests")
+        return 1
+    
+    tester.test_get_bids_for_request_as_owner()
+    tester.test_get_bids_for_request_as_bidder()
+    tester.test_get_my_bids()
+    
+    # Bid messaging tests
+    tester.test_create_bid_message_from_provider()
+    tester.test_create_bid_message_from_customer()
+    tester.test_get_bid_messages_as_provider()
+    tester.test_get_bid_messages_as_customer()
+    
+    # Error case tests
+    tester.test_error_cases()
+    
+    # Print final results
+    print("\n" + "=" * 60)
+    print(f"📊 FINAL RESULTS:")
+    print(f"   Tests Run: {tester.tests_run}")
+    print(f"   Tests Passed: {tester.tests_passed}")
+    print(f"   Tests Failed: {tester.tests_run - tester.tests_passed}")
+    print(f"   Success Rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+    
+    if tester.tests_passed == tester.tests_run:
+        print("🎉 All tests passed!")
+        return 0
+    else:
+        print("⚠️  Some tests failed. Check the output above for details.")
+        return 1
+
+if __name__ == "__main__":
+    sys.exit(main())
