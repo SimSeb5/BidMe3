@@ -510,7 +510,7 @@ async def get_service_requests(
     sort_direction = -1 if sort_order == "desc" else 1
     
     # Pagination
-    limit = min(max(1, limit), 50)  # Max 50 items per page
+    limit = min(max(1, limit), 1000)  # Max 1000 items per page for showing hundreds
     skip = (page - 1) * limit
     
     # Optimized query with projection to return only needed fields
