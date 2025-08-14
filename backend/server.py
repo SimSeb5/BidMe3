@@ -678,6 +678,107 @@ async def get_ai_recommendations_endpoint(request: LocationRecommendationRequest
     )
     return recommendations
 
+# Service Providers endpoints
+@api_router.get("/service-providers")
+async def get_service_providers(
+    category: Optional[str] = None,
+    location: Optional[str] = None,
+    verified_only: Optional[bool] = False,
+    min_rating: Optional[float] = None,
+    latitude: Optional[float] = None,
+    longitude: Optional[float] = None,
+    radius_km: Optional[float] = 50.0,
+    limit: Optional[int] = 50
+):
+    """
+    Get service providers with filtering options
+    
+    Parameters:
+    - category: Filter by service category
+    - location: Filter by location (partial match)
+    - verified_only: Show only verified providers
+    - min_rating: Minimum Google rating
+    - latitude/longitude: Center point for distance-based search
+    - radius_km: Search radius in kilometers (default: 50km)
+    - limit: Maximum number of results
+    """
+    filter_dict = {}
+    
+    # Category filter
+    if category:
+        filter_dict["services"] = {"$in": [category]}
+    
+    # Location filter
+    if location:
+        filter_dict["location"] = {"$regex": location, "$options": "i"}
+    
+    # Verified filter
+    if verified_only:
+        filter_dict["verified"] = True
+    
+    # Rating filter
+    if min_rating is not None:
+        filter_dict["google_rating"] = {"$gte": min_rating}
+    
+    # Geographic proximity filter
+    if latitude is not None and longitude is not None:
+        # MongoDB geospatial query for providers within radius
+        filter_dict["latitude"] = {
+            "$gte": latitude - (radius_km / 111.0),  # Rough conversion: 1 degree ≈ 111km
+            "$lte": latitude + (radius_km / 111.0)
+        }
+        filter_dict["longitude"] = {
+            "$gte": longitude - (radius_km / (111.0 * abs(latitude / 90.0))),
+            "$lte": longitude + (radius_km / (111.0 * abs(latitude / 90.0)))
+        }
+    
+    # Limit validation
+    limit = min(max(1, limit), 200)
+    
+    providers = await db.service_providers.find(filter_dict).sort("google_rating", -1).limit(limit).to_list(limit)
+    
+    # Calculate distance if coordinates provided
+    if latitude is not None and longitude is not None:
+        import math
+        
+        def calculate_distance(lat1, lon1, lat2, lon2):
+            """Calculate distance between two points using Haversine formula"""
+            R = 6371  # Earth's radius in kilometers
+            
+            lat1_rad = math.radians(lat1)
+            lon1_rad = math.radians(lon1)
+            lat2_rad = math.radians(lat2)
+            lon2_rad = math.radians(lon2)
+            
+            dlat = lat2_rad - lat1_rad
+            dlon = lon2_rad - lon1_rad
+            
+            a = math.sin(dlat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon/2)**2
+            c = 2 * math.asin(math.sqrt(a))
+            
+            return R * c
+        
+        for provider in providers:
+            distance = calculate_distance(
+                latitude, longitude,
+                provider["latitude"], provider["longitude"]
+            )
+            provider["distance_km"] = round(distance, 2)
+        
+        # Sort by distance if coordinates provided
+        providers.sort(key=lambda x: x.get("distance_km", float('inf')))
+    
+    return serialize_mongo_doc(providers)
+
+@api_router.get("/service-providers/{provider_id}")
+async def get_service_provider(provider_id: str):
+    """Get detailed information about a specific service provider"""
+    provider = await db.service_providers.find_one({"id": provider_id})
+    if not provider:
+        raise HTTPException(status_code=404, detail="Service provider not found")
+    
+    return serialize_mongo_doc(provider)
+
 async def get_ai_recommendations(service_category: str, description: str, location: str = None):
     """Get AI-powered service provider recommendations"""
     try:
