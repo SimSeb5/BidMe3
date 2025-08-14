@@ -64,6 +64,12 @@ const Dashboard = () => {
     );
   }
 
+  // Support both old and new role formats
+  const userRoles = user.roles || [user.role];
+  const isCustomer = userRoles.includes('customer');
+  const isProvider = userRoles.includes('provider');
+  const primaryRole = isProvider ? 'provider' : 'customer';
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Clean Hero Section */}
@@ -71,13 +77,13 @@ const Dashboard = () => {
         <div className="hero-content-clean">
           <div className="text-center mb-8">
             <h1 className="hero-title">
-              {user.role === 'customer' 
+              {primaryRole === 'customer' 
                 ? 'Find Professional Services' 
                 : 'Grow Your Business'
               }
             </h1>
             <p className="hero-subtitle">
-              {user.role === 'customer'
+              {primaryRole === 'customer'
                 ? 'Connect with verified professionals and get competitive bids for your projects'
                 : 'Discover new opportunities and submit winning proposals'
               }
@@ -85,7 +91,7 @@ const Dashboard = () => {
           </div>
           
           <div className="hero-actions">
-            {user.role === 'customer' ? (
+            {isCustomer && (
               <>
                 <Link to="/request-service" className="btn btn-primary btn-large">
                   Post a Request
@@ -94,7 +100,8 @@ const Dashboard = () => {
                   Browse Services
                 </Link>
               </>
-            ) : (
+            )}
+            {isProvider && !isCustomer && (
               <>
                 <Link to="/services" className="btn btn-primary btn-large">
                   Find Projects
@@ -119,7 +126,7 @@ const Dashboard = () => {
             </div>
           </div>
           
-          {user.role === 'customer' && (
+          {isCustomer && (
             <div className="stat-card-clean">
               <div className="stat-icon">📋</div>
               <div className="stat-content">
@@ -129,7 +136,7 @@ const Dashboard = () => {
             </div>
           )}
           
-          {user.role === 'provider' && (
+          {isProvider && (
             <div className="stat-card-clean">
               <div className="stat-icon">💼</div>
               <div className="stat-content">
