@@ -438,7 +438,7 @@ async def update_provider_profile(profile_data: ProviderProfileCreate, current_u
     )
     
     updated_profile = await db.provider_profiles.find_one({"user_id": current_user["id"]})
-    return updated_profile
+    return serialize_mongo_doc(updated_profile)
 
 # Bid Messages (Negotiation)
 @api_router.post("/bid-messages")
