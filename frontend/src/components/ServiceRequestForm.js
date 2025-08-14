@@ -331,24 +331,6 @@ const ServiceRequestForm = () => {
                 </div>
                 
                 <div className="form-group">
-                  <label className="form-label">
-                    Location 
-                    {locationLoading && <span className="text-blue-600 ml-2">🌍 Detecting...</span>}
-                  </label>
-                  <input
-                    type="text"
-                    name="location"
-                    className="form-input"
-                    value={formData.location}
-                    onChange={handleChange}
-                    placeholder="City, State or specific address"
-                  />
-                  <p className="text-sm text-gray-600 mt-1">
-                    Adding your location helps us recommend nearby service providers
-                  </p>
-                </div>
-                
-                <div className="form-group">
                   <label className="form-label">Deadline (Optional)</label>
                   <input
                     type="date"
@@ -356,7 +338,19 @@ const ServiceRequestForm = () => {
                     className="form-input"
                     value={formData.deadline}
                     onChange={handleChange}
+                    onFocus={(e) => {
+                      // Prevent scroll-up when date picker opens
+                      e.preventDefault();
+                    }}
+                    onBlur={(e) => {
+                      // Prevent scroll-up when date picker closes
+                      e.preventDefault();
+                    }}
                     min={new Date().toISOString().split('T')[0]}
+                    style={{ 
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'textfield'
+                    }}
                   />
                 </div>
                 
