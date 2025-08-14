@@ -669,14 +669,34 @@ async def get_bid_messages(bid_id: str, current_user: dict = Depends(get_current
 
 # AI Recommendations endpoint
 @api_router.post("/ai-recommendations")
-async def get_ai_recommendations_endpoint(request: LocationRecommendationRequest, current_user: dict = Depends(get_current_user)):
-    """Get AI-powered recommendations for service providers"""
-    recommendations = await get_ai_recommendations(
-        service_category=request.service_category,
-        description=request.description,
-        location=request.location
+async def get_service_recommendations(request: LocationRecommendationRequest):
+    """Get AI-powered service provider recommendations"""
+    ai_insights = await get_ai_recommendations(
+        request.service_category,
+        request.description,
+        request.location
     )
-    return recommendations
+    
+    # Get relevant service providers if location is provided
+    recommended_providers = []
+    if request.location:
+        try:
+            # Search for providers in the same location/area
+            providers = await db.service_providers.find({
+                "services": {"$in": [request.service_category]},
+                "location": {"$regex": request.location, "$options": "i"}
+            }).sort("google_rating", -1).limit(5).to_list(5)
+            
+            recommended_providers = serialize_mongo_doc(providers)
+            
+        except Exception as e:
+            print(f"Error fetching providers: {e}")
+    
+    return {
+        "ai_insights": ai_insights,
+        "recommended_providers": recommended_providers,
+        "total_providers_found": len(recommended_providers)
+    }
 
 # Service Providers endpoints
 @api_router.get("/service-providers")
