@@ -68,10 +68,10 @@ const PublicHome = () => {
         <div className="hero-content-clean">
           <div className="text-center mb-8">
             <h1 className="hero-title">
-              Connect with Professional Service Providers
+              Welcome to <span className="text-yellow-300">BidMe</span>
             </h1>
             <p className="hero-subtitle">
-              Find verified professionals for your projects or grow your business by offering services
+              Where great projects meet skilled professionals. Post your task, get competitive bids, and hire the perfect match.
             </p>
           </div>
           
