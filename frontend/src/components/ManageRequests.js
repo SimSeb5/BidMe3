@@ -223,7 +223,10 @@ const ManageRequests = () => {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Manage My Requests</h1>
-            <p className="text-gray-600 mt-1">Edit your requests and manage bids</p>
+            <p className="text-gray-600 mt-1">Edit your requests, manage bids, and delete posts</p>
+            <div className="mt-2 text-sm text-gray-500">
+              💡 <strong>Tip:</strong> You can delete open or completed requests. In-progress requests must be completed first.
+            </div>
           </div>
           <Link to="/request-service" className="btn btn-primary">
             + Post New Request
