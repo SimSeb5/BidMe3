@@ -1453,6 +1453,47 @@ async def clear_test_data():
 async def startup_event():
     await initialize_sample_providers()
     await initialize_sample_service_requests()
+    await create_database_indexes()
+
+async def create_database_indexes():
+    """Create database indexes for improved query performance"""
+    try:
+        # Service requests indexes
+        await db.service_requests.create_index([("category", 1)])
+        await db.service_requests.create_index([("status", 1)])
+        await db.service_requests.create_index([("location", "text")])
+        await db.service_requests.create_index([("created_at", -1)])
+        await db.service_requests.create_index([("deadline", 1)])
+        await db.service_requests.create_index([("budget_min", 1), ("budget_max", 1)])
+        await db.service_requests.create_index([("user_id", 1)])
+        
+        # Create text index for search functionality
+        await db.service_requests.create_index([
+            ("title", "text"), 
+            ("description", "text")
+        ])
+        
+        # Service providers indexes
+        await db.service_providers.create_index([("services", 1)])
+        await db.service_providers.create_index([("location", "text")])
+        await db.service_providers.create_index([("google_rating", -1)])
+        await db.service_providers.create_index([("verified", 1)])
+        
+        # Bids indexes
+        await db.bids.create_index([("service_request_id", 1)])
+        await db.bids.create_index([("provider_id", 1)])
+        await db.bids.create_index([("created_at", -1)])
+        await db.bids.create_index([("price", 1)])
+        
+        # Users indexes
+        await db.users.create_index([("email", 1)], unique=True)
+        await db.users.create_index([("id", 1)], unique=True)
+        
+        print("✅ Database indexes created successfully for improved performance")
+        
+    except Exception as e:
+        print(f"⚠️ Warning: Could not create some indexes: {e}")
+        # Continue anyway as indexes are performance optimization, not critical
 
 # Include the router in the main app
 app.include_router(api_router)
