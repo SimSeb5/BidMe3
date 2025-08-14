@@ -1701,9 +1701,110 @@ async def clear_test_data():
 # Initialize sample data on startup
 @app.on_event("startup")
 async def startup_event():
-    await initialize_sample_providers()
-    await initialize_sample_service_requests()
+    await initialize_comprehensive_sample_data()
     await create_database_indexes()
+
+async def initialize_comprehensive_sample_data():
+    """Initialize the database with comprehensive sample data including bids"""
+    from sample_data import get_comprehensive_sample_data
+    
+    sample_providers, sample_requests, sample_bids = get_comprehensive_sample_data()
+    
+    # Check if data already exists
+    existing_providers = await db.service_providers.count_documents({})
+    if existing_providers > 0:
+        print(f"Sample data already exists ({existing_providers} providers)")
+        return
+    
+    # Create demo user for requests
+    demo_user = {
+        "id": str(uuid.uuid4()),
+        "email": "demo@bidme.com",
+        "phone": "(555) 000-0000", 
+        "password_hash": get_password_hash("demopassword"),
+        "roles": ["customer"],
+        "first_name": "Demo",
+        "last_name": "User",
+        "is_verified": True,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    
+    await db.users.insert_one(demo_user)
+    demo_user_id = demo_user["id"]
+    
+    # Create provider users for bids
+    provider_users = []
+    for i, provider in enumerate(sample_providers[:10]):  # Create users for first 10 providers
+        provider_user = {
+            "id": str(uuid.uuid4()),
+            "email": f"provider{i+1}@bidme.com",
+            "phone": provider["phone"],
+            "password_hash": get_password_hash("providerpassword"),
+            "roles": ["customer", "provider"],
+            "first_name": provider["business_name"].split()[0],
+            "last_name": "Provider",
+            "is_verified": True,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        await db.users.insert_one(provider_user)
+        provider_users.append(provider_user)
+    
+    # Add service providers
+    for provider_data in sample_providers:
+        provider_data["id"] = str(uuid.uuid4())
+        provider = ServiceProvider(**provider_data)
+        await db.service_providers.insert_one(provider.dict())
+    
+    # Add service requests
+    request_map = {}  # Map titles to IDs for bids
+    for request_data in sample_requests:
+        request_data["user_id"] = demo_user_id
+        request_data["id"] = str(uuid.uuid4())
+        request_data["created_at"] = datetime.utcnow()
+        request_data["updated_at"] = datetime.utcnow()
+        
+        request_map[request_data["title"]] = request_data["id"]
+        request = ServiceRequest(**request_data)
+        await db.service_requests.insert_one(request.dict())
+    
+    # Add sample bids
+    for bid_data in sample_bids:
+        # Find matching provider user
+        provider_user = None
+        for pu in provider_users:
+            if bid_data["provider_name"] in pu["first_name"]:
+                provider_user = pu
+                break
+        
+        if not provider_user:
+            provider_user = provider_users[0]  # Fallback
+        
+        request_id = request_map.get(bid_data["service_request_title"])
+        if request_id:
+            bid = {
+                "id": str(uuid.uuid4()),
+                "service_request_id": request_id,
+                "provider_id": provider_user["id"],
+                "provider_name": bid_data["provider_name"],
+                "price": bid_data["price"],
+                "proposal": bid_data["proposal"],
+                "start_date": bid_data["start_date"],
+                "duration_days": bid_data["duration_days"],
+                "duration_description": bid_data["duration_description"],
+                "status": bid_data["status"],
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            }
+            await db.bids.insert_one(bid)
+    
+    print(f"✅ Initialized comprehensive sample data:")
+    print(f"   - {len(sample_providers)} service providers")
+    print(f"   - {len(sample_requests)} service requests")
+    print(f"   - {len(sample_bids)} sample bids")
+    print(f"   - Demo customer: demo@bidme.com / demopassword")
+    print(f"   - Provider accounts: provider1@bidme.com / providerpassword")
 
 async def create_database_indexes():
     """Create database indexes for improved query performance"""
