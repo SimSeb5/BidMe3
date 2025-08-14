@@ -27,6 +27,8 @@ const ServiceRequestForm = () => {
   const [error, setError] = useState('');
   const [locationLoading, setLocationLoading] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [aiCategorySelected, setAiCategorySelected] = useState(false);
 
   useEffect(() => {
     // Support both old and new role systems
