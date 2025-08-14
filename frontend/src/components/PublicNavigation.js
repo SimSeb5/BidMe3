@@ -29,6 +29,13 @@ const PublicNavigation = () => {
             Browse Services
           </Link>
           
+          <Link 
+            to="/providers" 
+            className={`nav-link-clean ${isActive('/providers') ? 'active' : ''}`}
+          >
+            Browse Providers
+          </Link>
+          
           <div className="nav-auth-buttons">
             <Link to="/login" className="btn btn-outline">
               Sign In
