@@ -133,19 +133,36 @@ const Dashboard = () => {
       </div>
 
       <div className="container py-12">
-        {/* Clean Stats - Only show relevant metrics */}
+        {/* Stats Section - Show Marketplace Numbers */}
         <div className="stats-clean">
           <div className="stat-card-clean">
-            <div className="stat-icon">🎯</div>
+            <div className="stat-icon">📋</div>
             <div className="stat-content">
               <span className="stat-number">{stats.totalRequests}</span>
-              <span className="stat-label">Active Projects</span>
+              <span className="stat-label">Services Needed</span>
             </div>
           </div>
           
-          {isCustomer && (
+          <div className="stat-card-clean">
+            <div className="stat-icon">✅</div>
+            <div className="stat-content">
+              <span className="stat-number">{stats.completedProjects}</span>
+              <span className="stat-label">Completed Projects</span>
+            </div>
+          </div>
+          
+          <div className="stat-card-clean">
+            <div className="stat-icon">🛡️</div>
+            <div className="stat-content">
+              <span className="stat-number">{stats.verifiedProfessionals}</span>
+              <span className="stat-label">Verified Professionals</span>
+            </div>
+          </div>
+          
+          {/* Personal Stats - Only show if user has activity */}
+          {isCustomer && stats.myRequests > 0 && (
             <div className="stat-card-clean">
-              <div className="stat-icon">📋</div>
+              <div className="stat-icon">👤</div>
               <div className="stat-content">
                 <span className="stat-number">{stats.myRequests}</span>
                 <span className="stat-label">My Requests</span>
@@ -153,7 +170,7 @@ const Dashboard = () => {
             </div>
           )}
           
-          {isProvider && (
+          {isProvider && stats.myBids > 0 && (
             <div className="stat-card-clean">
               <div className="stat-icon">💼</div>
               <div className="stat-content">
