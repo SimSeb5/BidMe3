@@ -134,6 +134,7 @@ function App() {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/request-service" element={<ServiceRequestForm />} />
                 <Route path="/my-requests" element={<MyRequests />} />
+                <Route path="/manage-requests" element={<ManageRequests />} />
                 <Route path="/my-bids" element={<MyBids />} />
                 <Route path="/profile" element={<ProviderProfile />} />
                 <Route path="/manage-roles" element={<RoleManager />} />
@@ -143,6 +144,7 @@ function App() {
                 <Route path="/dashboard" element={<Navigate to="/login" replace />} />
                 <Route path="/request-service" element={<Navigate to="/login" replace />} />
                 <Route path="/my-requests" element={<Navigate to="/login" replace />} />
+                <Route path="/manage-requests" element={<Navigate to="/login" replace />} />
                 <Route path="/my-bids" element={<Navigate to="/login" replace />} />
                 <Route path="/profile" element={<Navigate to="/login" replace />} />
                 <Route path="/manage-roles" element={<Navigate to="/login" replace />} />
