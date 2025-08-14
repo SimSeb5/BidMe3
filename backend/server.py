@@ -1082,17 +1082,26 @@ async def get_service_recommendations(request: LocationRecommendationRequest):
             get_ai_recommendations(
                 request.service_category,
                 request.description,
-                request.location
+                request.location,
+                request.title,
+                request.budget_min,
+                request.budget_max,
+                request.deadline,
+                request.urgency_level
             ),
-            timeout=3.0  # 3 second timeout
+            timeout=5.0  # Increased timeout to 5 seconds for better results
         )
     except asyncio.TimeoutError:
         # Fallback to quick response if AI is slow
+        budget_guidance = "Get multiple quotes for comparison"
+        if request.budget_min and request.budget_max:
+            budget_guidance = f"Expect quotes within ${request.budget_min:,.0f} - ${request.budget_max:,.0f}"
+        
         ai_insights = {
             "qualifications": ["Licensed and insured", "Good reviews and ratings", "Relevant experience"],
             "questions": ["Are you licensed and insured?", "Can you provide references?", "What's your timeline?"],
             "red_flags": ["No license or insurance", "Unusually low prices", "Pressure for immediate payment"],
-            "price_range": "Get multiple quotes for comparison",
+            "price_range": budget_guidance,
             "timeline": "Discuss timeline expectations upfront"
         }
     
