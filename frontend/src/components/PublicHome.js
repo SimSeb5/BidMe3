@@ -122,7 +122,7 @@ const PublicHome = () => {
         {/* Public Stats */}
         <div className="stats-clean">
           <div className="stat-card-clean">
-            <div className="stat-icon">🎯</div>
+            <div className="stat-icon">📋</div>
             <div className="stat-content">
               <span className="stat-number">{stats.totalRequests}</span>
               <span className="stat-label">Services Needed</span>
@@ -130,7 +130,7 @@ const PublicHome = () => {
           </div>
           
           <div className="stat-card-clean">
-            <div className="stat-icon">🏆</div>
+            <div className="stat-icon">✅</div>
             <div className="stat-content">
               <span className="stat-number">{stats.completedProjects}</span>
               <span className="stat-label">Completed Projects</span>
@@ -138,7 +138,7 @@ const PublicHome = () => {
           </div>
           
           <div className="stat-card-clean">
-            <div className="stat-icon">⭐</div>
+            <div className="stat-icon">🛡️</div>
             <div className="stat-content">
               <span className="stat-number">{stats.verifiedProfessionals}</span>
               <span className="stat-label">Verified Professionals</span>
