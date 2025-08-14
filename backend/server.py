@@ -573,6 +573,217 @@ async def get_bid_messages(bid_id: str, current_user: dict = Depends(get_current
     
     return serialize_mongo_doc(messages)
 
+async def get_ai_recommendations(service_category: str, description: str, location: str = None):
+    """Get AI-powered service provider recommendations"""
+    try:
+        # Initialize AI chat
+        chat = LlmChat(
+            api_key=os.environ.get('EMERGENT_LLM_KEY'),
+            session_id=f"recommendations_{uuid.uuid4()}",
+            system_message="""You are an AI assistant that helps match customers with the best service providers based on their location and service needs.
+
+Your task is to analyze service requests and recommend the most suitable providers from a database.
+
+You should consider:
+1. Geographic proximity to the customer
+2. Service category match
+3. Provider ratings and reviews
+4. Provider specializations
+5. Availability and response time
+
+Always provide practical, helpful recommendations with clear reasoning."""
+        ).with_model("openai", "gpt-4o-mini")
+
+        # Create recommendation prompt
+        user_message = UserMessage(
+            text=f"""Please help me find the best service providers for this request:
+
+Service Category: {service_category}
+Description: {description}
+Location: {location or "Not specified"}
+
+Based on this information, what should I look for in service providers? Please provide:
+1. Key qualifications to look for
+2. Important questions to ask providers
+3. Red flags to avoid
+4. Typical price ranges for this service
+5. Timeline expectations
+
+Format your response as a JSON object with these keys: qualifications, questions, red_flags, price_range, timeline."""
+        )
+
+        # Get AI response
+        response = await chat.send_message(user_message)
+        
+        # Try to parse JSON response
+        try:
+            ai_insights = json.loads(response)
+        except:
+            # Fallback if JSON parsing fails
+            ai_insights = {
+                "qualifications": ["Licensed and insured", "Good reviews and ratings", "Relevant experience"],
+                "questions": ["Are you licensed and insured?", "Can you provide references?", "What's your timeline?"],
+                "red_flags": ["No license or insurance", "Unusually low prices", "Pressure for immediate payment"],
+                "price_range": "Varies by project scope",
+                "timeline": "Depends on project complexity"
+            }
+
+        return ai_insights
+
+    except Exception as e:
+        print(f"AI recommendation error: {e}")
+        # Return fallback recommendations
+        return {
+            "qualifications": ["Licensed and insured", "Good reviews and ratings", "Relevant experience"],
+            "questions": ["Are you licensed and insured?", "Can you provide references?", "What's your timeline?"],
+            "red_flags": ["No license or insurance", "Unusually low prices", "Pressure for immediate payment"],
+            "price_range": "Get multiple quotes for comparison",
+            "timeline": "Discuss timeline expectations upfront"
+        }
+
+async def initialize_sample_providers():
+    """Initialize the database with realistic service providers"""
+    sample_providers = [
+        # Home Services - New York
+        {
+            "business_name": "Elite Plumbing Solutions",
+            "description": "Professional plumbing services with 15+ years experience. Emergency repairs, installations, and maintenance.",
+            "services": ["Home Services"],
+            "location": "New York, NY",
+            "latitude": 40.7128,
+            "longitude": -74.0060,
+            "phone": "(212) 555-0123",
+            "email": "contact@eliteplumbing.com",
+            "website": "https://eliteplumbing.com",
+            "google_rating": 4.8,
+            "google_reviews_count": 234,
+            "website_rating": 4.7,
+            "verified": True
+        },
+        {
+            "business_name": "Brooklyn Electric Pro",
+            "description": "Licensed electricians serving NYC. Residential and commercial electrical services.",
+            "services": ["Home Services"],
+            "location": "Brooklyn, NY", 
+            "latitude": 40.6782,
+            "longitude": -73.9442,
+            "phone": "(718) 555-0456",
+            "email": "info@brooklynelectric.com",
+            "website": "https://brooklynelectric.com",
+            "google_rating": 4.6,
+            "google_reviews_count": 189,
+            "website_rating": 4.5,
+            "verified": True
+        },
+        # Construction - Los Angeles
+        {
+            "business_name": "Sunshine Construction Group",
+            "description": "Full-service construction company specializing in residential renovations and custom builds.",
+            "services": ["Construction & Renovation"],
+            "location": "Los Angeles, CA",
+            "latitude": 34.0522,
+            "longitude": -118.2437,
+            "phone": "(323) 555-0789",
+            "email": "projects@sunshineconst.com",
+            "website": "https://sunshineconst.com",
+            "google_rating": 4.9,
+            "google_reviews_count": 156,
+            "website_rating": 4.8,
+            "verified": True
+        },
+        {
+            "business_name": "Precision Roofing LA",
+            "description": "Expert roofing contractors with 20+ years experience. Repairs, replacements, and inspections.",
+            "services": ["Construction & Renovation"],
+            "location": "Santa Monica, CA",
+            "latitude": 34.0195,
+            "longitude": -118.4912,
+            "phone": "(310) 555-0234",
+            "email": "info@precisionroofing.com", 
+            "website": "https://precisionroofing.com",
+            "google_rating": 4.7,
+            "google_reviews_count": 203,
+            "website_rating": 4.6,
+            "verified": True
+        },
+        # Professional Services - Chicago
+        {
+            "business_name": "Midwest Legal Advisors",
+            "description": "Experienced attorneys providing business law, contracts, and legal consultation services.",
+            "services": ["Professional Services"],
+            "location": "Chicago, IL",
+            "latitude": 41.8781,
+            "longitude": -87.6298,
+            "phone": "(312) 555-0567",
+            "email": "contact@midwestlegal.com",
+            "website": "https://midwestlegal.com",
+            "google_rating": 4.9,
+            "google_reviews_count": 87,
+            "website_rating": 4.8,
+            "verified": True
+        },
+        {
+            "business_name": "Chicago CPA Partners",
+            "description": "Certified public accountants offering tax preparation, bookkeeping, and business consulting.",
+            "services": ["Professional Services"],
+            "location": "Chicago, IL",
+            "latitude": 41.8781,
+            "longitude": -87.6298,
+            "phone": "(312) 555-0890",
+            "email": "info@chicagocpa.com",
+            "website": "https://chicagocpa.com",
+            "google_rating": 4.8,
+            "google_reviews_count": 142,
+            "website_rating": 4.7,
+            "verified": True
+        },
+        # Technology - San Francisco
+        {
+            "business_name": "Bay Area Tech Solutions",
+            "description": "IT consulting, web development, and digital transformation services for businesses.",
+            "services": ["Technology & IT"],
+            "location": "San Francisco, CA",
+            "latitude": 37.7749,
+            "longitude": -122.4194,
+            "phone": "(415) 555-0123",
+            "email": "hello@baytech.com",
+            "website": "https://baytech.com",
+            "google_rating": 4.6,
+            "google_reviews_count": 98,
+            "website_rating": 4.5,
+            "verified": True
+        },
+        {
+            "business_name": "Silicon Valley Apps",
+            "description": "Mobile app development and software consulting for startups and enterprises.",
+            "services": ["Technology & IT"],
+            "location": "Palo Alto, CA",
+            "latitude": 37.4419,
+            "longitude": -122.1430,
+            "phone": "(650) 555-0456",
+            "email": "contact@svapps.com",
+            "website": "https://svapps.com",
+            "google_rating": 4.7,
+            "google_reviews_count": 76,
+            "website_rating": 4.6,
+            "verified": True
+        }
+    ]
+
+    # Check if providers already exist
+    existing_count = await db.service_providers.count_documents({})
+    if existing_count == 0:
+        # Add sample providers
+        for provider_data in sample_providers:
+            provider = ServiceProvider(**provider_data)
+            await db.service_providers.insert_one(provider.dict())
+        print(f"Initialized {len(sample_providers)} sample service providers")
+
+# Initialize sample data on startup
+@app.on_event("startup")
+async def startup_event():
+    await initialize_sample_providers()
+
 # Include the router in the main app
 app.include_router(api_router)
 
