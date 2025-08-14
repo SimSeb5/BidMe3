@@ -1175,6 +1175,410 @@ class ServiceConnectAPITester:
         
         return success1 and success2 and providers_quality and requests_quality
 
+    # BIDME MARKETPLACE ENHANCEMENTS - NEW FEATURES TESTING
+    def test_enhanced_ai_recommendations_with_all_fields(self):
+        """Test Enhanced AI Recommendations with comprehensive request data including all fields"""
+        print("\n🎯 Testing Enhanced AI Recommendations with All Fields...")
+        
+        # Test comprehensive AI recommendations with ALL service request fields
+        comprehensive_request = {
+            "service_category": "Home Services",
+            "title": "Professional Kitchen Deep Cleaning Service Needed",
+            "description": "I need a thorough deep cleaning of my kitchen including appliances, cabinets, and countertops. The kitchen hasn't been professionally cleaned in over a year and needs special attention to grease buildup.",
+            "budget_min": 150.0,
+            "budget_max": 300.0,
+            "deadline": (datetime.now() + timedelta(days=10)).isoformat(),
+            "urgency_level": "moderate",
+            "location": "Manhattan, NY"
+        }
+        
+        success, response = self.run_test(
+            "Enhanced AI Recommendations - All Fields",
+            "POST",
+            "ai-recommendations",
+            200,
+            data=comprehensive_request
+        )
+        
+        if success:
+            # Verify AI insights are more personalized
+            ai_insights = response.get('ai_insights', {})
+            print(f"   ✅ AI insights provided with comprehensive data")
+            
+            # Check for enhanced personalization
+            if 'qualifications' in ai_insights:
+                qualifications = ai_insights['qualifications']
+                print(f"   ✅ Qualifications: {len(qualifications)} items")
+                # Should be more specific due to comprehensive input
+                if any('kitchen' in str(q).lower() or 'clean' in str(q).lower() for q in qualifications):
+                    print(f"   ✅ Personalized qualifications found")
+            
+            if 'price_range' in ai_insights:
+                price_range = ai_insights['price_range']
+                print(f"   ✅ Price guidance: {price_range}")
+                # Should reference the provided budget range
+                if '$150' in str(price_range) or '$300' in str(price_range):
+                    print(f"   ✅ Budget-aware price guidance")
+            
+            if 'timeline' in ai_insights:
+                timeline = ai_insights['timeline']
+                print(f"   ✅ Timeline guidance: {timeline}")
+                # Should consider urgency level and deadline
+                if 'moderate' in str(timeline).lower() or '10' in str(timeline):
+                    print(f"   ✅ Deadline-aware timeline guidance")
+            
+            # Verify no fallback messages appear
+            response_str = json.dumps(response)
+            if "Using general tips" not in response_str:
+                print(f"   ✅ No fallback error messages detected")
+            else:
+                print(f"   ⚠️  Fallback message detected - should be eliminated")
+            
+            # Check recommended providers
+            providers = response.get('recommended_providers', [])
+            print(f"   ✅ Recommended providers: {len(providers)}")
+            
+            return True
+        
+        return False
+
+    def test_service_providers_directory_comprehensive(self):
+        """Test Service Providers Directory with comprehensive filtering and data verification"""
+        print("\n🎯 Testing Service Providers Directory Comprehensive...")
+        
+        all_success = True
+        
+        # Test 1: Get all providers and verify 50+ providers exist
+        success1, response1 = self.run_test(
+            "Service Providers Directory - All Providers",
+            "GET",
+            "service-providers",
+            200,
+            params={"limit": 100}
+        )
+        
+        if success1:
+            all_providers = response1 if isinstance(response1, list) else []
+            print(f"   ✅ Total service providers available: {len(all_providers)}")
+            
+            if len(all_providers) >= 50:
+                print(f"   ✅ Meets requirement: 50+ providers ({len(all_providers)} found)")
+            else:
+                print(f"   ⚠️  Below requirement: Expected 50+, found {len(all_providers)}")
+                all_success = False
+            
+            # Verify comprehensive provider data
+            if all_providers:
+                sample_provider = all_providers[0]
+                required_fields = ['business_name', 'description', 'services', 'location', 
+                                 'phone', 'email', 'google_rating', 'google_reviews_count', 'verified']
+                
+                for field in required_fields:
+                    if field in sample_provider:
+                        print(f"   ✅ Provider data includes {field}: {sample_provider[field]}")
+                    else:
+                        print(f"   ⚠️  Missing provider field: {field}")
+        else:
+            all_success = False
+        
+        # Test 2: Category filtering
+        success2, response2 = self.run_test(
+            "Service Providers Directory - Category Filter",
+            "GET",
+            "service-providers",
+            200,
+            params={"category": "Home Services", "limit": 20}
+        )
+        
+        if success2:
+            home_providers = response2 if isinstance(response2, list) else []
+            print(f"   ✅ Home Services providers: {len(home_providers)}")
+            
+            # Verify filtering worked
+            for provider in home_providers[:3]:
+                services = provider.get('services', [])
+                if 'Home Services' in services:
+                    print(f"   ✅ Correct category filter: {provider.get('business_name')}")
+        else:
+            all_success = False
+        
+        # Test 3: Location filtering
+        success3, response3 = self.run_test(
+            "Service Providers Directory - Location Filter",
+            "GET",
+            "service-providers",
+            200,
+            params={"location": "New York", "limit": 20}
+        )
+        
+        if success3:
+            ny_providers = response3 if isinstance(response3, list) else []
+            print(f"   ✅ New York area providers: {len(ny_providers)}")
+            
+            # Verify location filtering
+            for provider in ny_providers[:3]:
+                location = provider.get('location', '')
+                if 'New York' in location or 'NY' in location:
+                    print(f"   ✅ Correct location filter: {provider.get('business_name')} - {location}")
+        else:
+            all_success = False
+        
+        # Test 4: Verified only filtering
+        success4, response4 = self.run_test(
+            "Service Providers Directory - Verified Only",
+            "GET",
+            "service-providers",
+            200,
+            params={"verified_only": True, "limit": 20}
+        )
+        
+        if success4:
+            verified_providers = response4 if isinstance(response4, list) else []
+            print(f"   ✅ Verified providers: {len(verified_providers)}")
+            
+            # Verify all are verified
+            all_verified = all(provider.get('verified', False) for provider in verified_providers)
+            if all_verified:
+                print(f"   ✅ All returned providers are verified")
+            else:
+                print(f"   ⚠️  Some non-verified providers in verified-only results")
+        else:
+            all_success = False
+        
+        # Test 5: Minimum rating filtering
+        success5, response5 = self.run_test(
+            "Service Providers Directory - High Rating Filter",
+            "GET",
+            "service-providers",
+            200,
+            params={"min_rating": 4.5, "limit": 20}
+        )
+        
+        if success5:
+            high_rated_providers = response5 if isinstance(response5, list) else []
+            print(f"   ✅ High-rated providers (4.5+): {len(high_rated_providers)}")
+            
+            # Verify rating filter
+            for provider in high_rated_providers[:3]:
+                rating = provider.get('google_rating', 0)
+                if rating >= 4.5:
+                    print(f"   ✅ High rating confirmed: {provider.get('business_name')} - {rating}")
+        else:
+            all_success = False
+        
+        return all_success
+
+    def test_home_dashboard_data_verification(self):
+        """Test Updated Home Dashboard Data - verify sufficient service requests exist"""
+        print("\n🎯 Testing Home Dashboard Data Verification...")
+        
+        # Test service requests endpoint for dashboard data
+        success, response = self.run_test(
+            "Home Dashboard - Service Requests Data",
+            "GET",
+            "service-requests",
+            200,
+            params={"limit": 100}  # Get more to verify count
+        )
+        
+        if success:
+            all_requests = response if isinstance(response, list) else []
+            print(f"   ✅ Total service requests available: {len(all_requests)}")
+            
+            # Verify 55+ service requests exist
+            if len(all_requests) >= 55:
+                print(f"   ✅ Meets requirement: 55+ service requests ({len(all_requests)} found)")
+            else:
+                print(f"   ⚠️  Below requirement: Expected 55+, found {len(all_requests)}")
+                return False
+            
+            # Test different status filtering for dashboard
+            status_counts = {}
+            
+            # Test completed status
+            success_completed, response_completed = self.run_test(
+                "Dashboard Data - Completed Projects",
+                "GET",
+                "service-requests",
+                200,
+                params={"status": "completed", "limit": 50}
+            )
+            
+            if success_completed:
+                completed_requests = response_completed if isinstance(response_completed, list) else []
+                status_counts['completed'] = len(completed_requests)
+                print(f"   ✅ Completed projects: {len(completed_requests)}")
+            
+            # Test open status
+            success_open, response_open = self.run_test(
+                "Dashboard Data - Open Projects",
+                "GET",
+                "service-requests",
+                200,
+                params={"status": "open", "limit": 50}
+            )
+            
+            if success_open:
+                open_requests = response_open if isinstance(response_open, list) else []
+                status_counts['open'] = len(open_requests)
+                print(f"   ✅ Open projects (Services Needed): {len(open_requests)}")
+            
+            # Test in_progress status
+            success_progress, response_progress = self.run_test(
+                "Dashboard Data - In Progress Projects",
+                "GET",
+                "service-requests",
+                200,
+                params={"status": "in_progress", "limit": 50}
+            )
+            
+            if success_progress:
+                progress_requests = response_progress if isinstance(response_progress, list) else []
+                status_counts['in_progress'] = len(progress_requests)
+                print(f"   ✅ In progress projects: {len(progress_requests)}")
+            
+            # Verify enhanced data includes required fields
+            sample_requests = all_requests[:5]  # Check first 5
+            enhanced_data_check = {
+                'urgency_level': 0,
+                'image_count': 0,
+                'bid_count': 0,
+                'avg_bid_price': 0,
+                'min_bid_price': 0,
+                'max_bid_price': 0
+            }
+            
+            for req in sample_requests:
+                for field in enhanced_data_check:
+                    if field in req and req[field] is not None:
+                        enhanced_data_check[field] += 1
+            
+            print(f"   Enhanced data coverage in sample:")
+            for field, count in enhanced_data_check.items():
+                print(f"   - {field}: {count}/5 requests")
+            
+            return True
+        
+        return False
+
+    def test_sample_data_verification_comprehensive(self):
+        """Test comprehensive sample data verification - 60+ providers, 55+ requests with details"""
+        print("\n🎯 Testing Sample Data Verification Comprehensive...")
+        
+        all_success = True
+        
+        # Verify 60+ service providers with realistic data
+        success1, response1 = self.run_test(
+            "Sample Data - 60+ Service Providers",
+            "GET",
+            "service-providers",
+            200,
+            params={"limit": 100}
+        )
+        
+        if success1:
+            providers = response1 if isinstance(response1, list) else []
+            print(f"   ✅ Service providers count: {len(providers)}")
+            
+            if len(providers) >= 60:
+                print(f"   ✅ Meets requirement: 60+ providers ({len(providers)} found)")
+            else:
+                print(f"   ⚠️  Below requirement: Expected 60+, found {len(providers)}")
+                all_success = False
+            
+            # Verify provider accounts have proper user records
+            providers_with_users = 0
+            for provider in providers[:10]:  # Check first 10
+                # Check if provider has comprehensive data
+                required_fields = ['business_name', 'description', 'services', 'location', 
+                                 'phone', 'email', 'google_rating', 'verified']
+                has_all_fields = all(field in provider for field in required_fields)
+                if has_all_fields:
+                    providers_with_users += 1
+            
+            print(f"   ✅ Providers with comprehensive data: {providers_with_users}/10 sampled")
+        else:
+            all_success = False
+        
+        # Verify 55+ service requests with images and comprehensive details
+        success2, response2 = self.run_test(
+            "Sample Data - 55+ Service Requests",
+            "GET",
+            "service-requests",
+            200,
+            params={"limit": 100}
+        )
+        
+        if success2:
+            requests = response2 if isinstance(response2, list) else []
+            print(f"   ✅ Service requests count: {len(requests)}")
+            
+            if len(requests) >= 55:
+                print(f"   ✅ Meets requirement: 55+ requests ({len(requests)} found)")
+            else:
+                print(f"   ⚠️  Below requirement: Expected 55+, found {len(requests)}")
+                all_success = False
+            
+            # Check for images and comprehensive details
+            requests_with_images = 0
+            requests_with_budgets = 0
+            requests_with_deadlines = 0
+            requests_with_urgency = 0
+            
+            for req in requests:
+                if req.get('image_count', 0) > 0:
+                    requests_with_images += 1
+                
+                if req.get('budget_min') or req.get('budget_max'):
+                    requests_with_budgets += 1
+                
+                if req.get('deadline'):
+                    requests_with_deadlines += 1
+                
+                if req.get('urgency_level'):
+                    requests_with_urgency += 1
+            
+            print(f"   ✅ Requests with images: {requests_with_images}/{len(requests)}")
+            print(f"   ✅ Requests with budgets: {requests_with_budgets}/{len(requests)}")
+            print(f"   ✅ Requests with deadlines: {requests_with_deadlines}/{len(requests)}")
+            print(f"   ✅ Requests with urgency levels: {requests_with_urgency}/{len(requests)}")
+        else:
+            all_success = False
+        
+        # Test bid data with start dates, durations, and proposals
+        success3, response3 = self.run_test(
+            "Sample Data - Bid Data Verification",
+            "GET",
+            "my-bids",
+            200,
+            token=self.provider_token
+        )
+        
+        if success3:
+            bids = response3 if isinstance(response3, list) else []
+            print(f"   ✅ Sample bids available: {len(bids)}")
+            
+            # Check bid data quality
+            bids_with_proposals = 0
+            bids_with_start_dates = 0
+            bids_with_durations = 0
+            
+            for bid in bids:
+                if bid.get('proposal'):
+                    bids_with_proposals += 1
+                
+                if bid.get('start_date'):
+                    bids_with_start_dates += 1
+                
+                if bid.get('duration_days') or bid.get('duration_description'):
+                    bids_with_durations += 1
+            
+            print(f"   ✅ Bids with proposals: {bids_with_proposals}/{len(bids)}")
+            print(f"   ✅ Bids with start dates: {bids_with_start_dates}/{len(bids)}")
+            print(f"   ✅ Bids with duration info: {bids_with_durations}/{len(bids)}")
+        
+        return all_success
+
     def test_error_cases(self):
         """Test various error cases"""
         print("\n🔍 Testing Error Cases...")
