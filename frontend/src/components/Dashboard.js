@@ -24,6 +24,22 @@ const Dashboard = () => {
     fetchCategories();
   }, []);
 
+  // Add effect to refresh dashboard when navigating back
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page became visible, refresh data in case something changed
+        refreshDashboardData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   // Add a function to refresh dashboard data
   const refreshDashboardData = () => {
     fetchDashboardData();
