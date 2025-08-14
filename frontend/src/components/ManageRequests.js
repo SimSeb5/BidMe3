@@ -89,7 +89,8 @@ const ManageRequests = () => {
   const handleEditRequest = (request) => {
     setEditingRequest({
       ...request,
-      deadline: request.deadline ? new Date(request.deadline).toISOString().slice(0, 16) : ''
+      deadline: request.deadline ? new Date(request.deadline).toISOString().slice(0, 16) : '',
+      images: request.images || []
     });
   };
 
@@ -104,7 +105,8 @@ const ManageRequests = () => {
         budget_max: parseFloat(editingRequest.budget_max) || null,
         deadline: editingRequest.deadline || null,
         location: editingRequest.location,
-        show_best_bids: editingRequest.show_best_bids
+        show_best_bids: editingRequest.show_best_bids,
+        images: editingRequest.images
       };
 
       await axios.put(`${API}/service-requests/${editingRequest.id}`, updateData, {
