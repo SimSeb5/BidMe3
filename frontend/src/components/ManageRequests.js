@@ -300,32 +300,29 @@ const ManageRequests = () => {
                   )}
 
                   <div className="flex justify-between items-center">
-                    <div className="flex gap-3">
+                    <div className="flex gap-2 flex-wrap">
                       {request.status === 'open' && (
-                        <>
-                          <button
-                            onClick={() => handleEditRequest(request)}
-                            className="btn btn-secondary btn-sm"
-                          >
-                            ✏️ Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteRequest(request.id, request.title)}
-                            className="btn btn-error btn-sm"
-                          >
-                            🗑️ Delete
-                          </button>
-                        </>
-                      )}
-
-                      {request.status === 'completed' && (
                         <button
-                          onClick={() => handleDeleteRequest(request.id, request.title)}
-                          className="btn btn-error btn-sm"
+                          onClick={() => handleEditRequest(request)}
+                          className="btn btn-secondary btn-sm"
                         >
-                          🗑️ Delete
+                          ✏️ Edit
                         </button>
                       )}
+
+                      <button
+                        onClick={() => setShowStatusModal(request)}
+                        className="btn btn-outline btn-sm"
+                      >
+                        📊 Change Status
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteRequest(request.id, request.title)}
+                        className="btn btn-error btn-sm"
+                      >
+                        🗑️ Delete
+                      </button>
                       
                       {request.bid_count > 0 && (
                         <button
