@@ -137,18 +137,18 @@ const Navigation = () => {
                   Post Request
                 </Link>
                 <Link 
+                  to="/services" 
+                  className={`mobile-link ${isActive('/services') ? 'active' : ''}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  View All Requests
+                </Link>
+                <Link 
                   to="/manage-requests" 
                   className={`mobile-link ${isActive('/manage-requests') ? 'active' : ''}`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Manage Requests
-                </Link>
-                <Link 
-                  to="/my-requests" 
-                  className={`mobile-link ${isActive('/my-requests') ? 'active' : ''}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  View All Requests
+                  Manage My Requests
                 </Link>
               </>
             )}
