@@ -392,7 +392,7 @@ async def get_my_bids(current_user: dict = Depends(get_current_user)):
             bid["service_title"] = request["title"]
             bid["service_category"] = request["category"]
     
-    return bids
+    return serialize_mongo_doc(bids)
 
 # Provider Profile Routes
 @api_router.post("/provider-profile")
