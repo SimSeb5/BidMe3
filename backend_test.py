@@ -633,6 +633,227 @@ class ServiceConnectAPITester:
             return True
         return False
 
+    def test_ai_recommendations_basic(self):
+        """Test AI recommendations endpoint with basic request"""
+        recommendation_data = {
+            "service_category": "Home Services",
+            "description": "I need professional house cleaning for a 3-bedroom home in Manhattan. Looking for reliable service with good reviews.",
+            "location": "New York, NY"
+        }
+        
+        success, response = self.run_test(
+            "AI Recommendations - Basic Request",
+            "POST",
+            "ai-recommendations",
+            200,
+            data=recommendation_data
+        )
+        
+        if success:
+            # Verify response structure
+            if 'ai_insights' in response:
+                print(f"   ✅ AI insights provided")
+                ai_insights = response['ai_insights']
+                expected_keys = ['qualifications', 'questions', 'red_flags', 'price_range', 'timeline']
+                for key in expected_keys:
+                    if key in ai_insights:
+                        print(f"   ✅ {key}: {ai_insights[key]}")
+                    else:
+                        print(f"   ⚠️  Missing {key} in AI insights")
+            
+            if 'recommended_providers' in response:
+                providers = response['recommended_providers']
+                print(f"   ✅ Found {len(providers)} recommended providers")
+                for i, provider in enumerate(providers[:3]):  # Show first 3
+                    print(f"   Provider {i+1}: {provider.get('business_name', 'Unknown')} - Rating: {provider.get('google_rating', 'N/A')}")
+            
+            if 'total_providers_found' in response:
+                print(f"   ✅ Total providers found: {response['total_providers_found']}")
+                
+        return success
+
+    def test_ai_recommendations_without_location(self):
+        """Test AI recommendations endpoint without location"""
+        recommendation_data = {
+            "service_category": "Technology & IT",
+            "description": "Need help setting up a new website for my small business. Looking for web development services."
+        }
+        
+        success, response = self.run_test(
+            "AI Recommendations - No Location",
+            "POST",
+            "ai-recommendations",
+            200,
+            data=recommendation_data
+        )
+        
+        if success:
+            # Should still get AI insights even without location
+            if 'ai_insights' in response:
+                print(f"   ✅ AI insights provided without location")
+            
+            # Should have empty or minimal provider recommendations
+            providers = response.get('recommended_providers', [])
+            print(f"   ✅ Providers without location: {len(providers)}")
+                
+        return success
+
+    def test_ai_recommendations_different_categories(self):
+        """Test AI recommendations for different service categories"""
+        test_cases = [
+            {
+                "service_category": "Construction & Renovation",
+                "description": "Need to renovate my kitchen with new cabinets and countertops",
+                "location": "Los Angeles, CA"
+            },
+            {
+                "service_category": "Professional Services",
+                "description": "Looking for legal advice for starting a new business",
+                "location": "Chicago, IL"
+            },
+            {
+                "service_category": "Creative & Design",
+                "description": "Need logo design and branding for my startup company",
+                "location": "San Francisco, CA"
+            }
+        ]
+        
+        all_success = True
+        for i, test_case in enumerate(test_cases):
+            success, response = self.run_test(
+                f"AI Recommendations - {test_case['service_category']}",
+                "POST",
+                "ai-recommendations",
+                200,
+                data=test_case
+            )
+            
+            if success:
+                ai_insights = response.get('ai_insights', {})
+                providers = response.get('recommended_providers', [])
+                print(f"   Category: {test_case['service_category']} - Providers: {len(providers)}")
+                
+                # Check if AI insights are relevant to the category
+                if 'qualifications' in ai_insights:
+                    print(f"   ✅ Qualifications provided for {test_case['service_category']}")
+            else:
+                all_success = False
+                
+        return all_success
+
+    def test_ai_recommendations_with_coordinates(self):
+        """Test AI recommendations with latitude/longitude coordinates"""
+        recommendation_data = {
+            "service_category": "Home Services",
+            "description": "Need plumbing repair for a leaky faucet in my apartment",
+            "location": "New York, NY",
+            "latitude": 40.7128,
+            "longitude": -74.0060
+        }
+        
+        success, response = self.run_test(
+            "AI Recommendations - With Coordinates",
+            "POST",
+            "ai-recommendations",
+            200,
+            data=recommendation_data
+        )
+        
+        if success:
+            providers = response.get('recommended_providers', [])
+            print(f"   ✅ Providers with coordinates: {len(providers)}")
+            
+            # Check if providers have location data
+            for provider in providers[:2]:  # Check first 2
+                if 'latitude' in provider and 'longitude' in provider:
+                    print(f"   ✅ Provider has coordinates: {provider.get('business_name')}")
+                    
+        return success
+
+    def test_service_providers_endpoint(self):
+        """Test the service providers endpoint"""
+        success, response = self.run_test(
+            "Get All Service Providers",
+            "GET",
+            "service-providers",
+            200
+        )
+        
+        if success:
+            providers = response if isinstance(response, list) else []
+            print(f"   ✅ Total service providers available: {len(providers)}")
+            
+            # Check provider data structure
+            if providers:
+                first_provider = providers[0]
+                required_fields = ['business_name', 'services', 'location', 'google_rating']
+                for field in required_fields:
+                    if field in first_provider:
+                        print(f"   ✅ Provider has {field}: {first_provider[field]}")
+                    else:
+                        print(f"   ⚠️  Provider missing {field}")
+                        
+        return success
+
+    def test_service_providers_with_filters(self):
+        """Test service providers endpoint with various filters"""
+        test_cases = [
+            {"category": "Home Services", "name": "Home Services Filter"},
+            {"location": "New York", "name": "Location Filter"},
+            {"verified_only": True, "name": "Verified Only Filter"},
+            {"min_rating": 4.5, "name": "High Rating Filter"},
+            {"category": "Technology & IT", "location": "San Francisco", "name": "Category + Location Filter"}
+        ]
+        
+        all_success = True
+        for test_case in test_cases:
+            params = {k: v for k, v in test_case.items() if k != 'name'}
+            success, response = self.run_test(
+                f"Service Providers - {test_case['name']}",
+                "GET",
+                "service-providers",
+                200,
+                params=params
+            )
+            
+            if success:
+                providers = response if isinstance(response, list) else []
+                print(f"   ✅ {test_case['name']}: {len(providers)} providers")
+            else:
+                all_success = False
+                
+        return all_success
+
+    def test_ai_recommendations_error_cases(self):
+        """Test AI recommendations error handling"""
+        print("\n🔍 Testing AI Recommendations Error Cases...")
+        
+        # Test with missing required fields
+        self.run_test(
+            "AI Recommendations - Missing Category",
+            "POST",
+            "ai-recommendations",
+            422,  # Validation error
+            data={"description": "Test description"}
+        )
+        
+        self.run_test(
+            "AI Recommendations - Missing Description",
+            "POST",
+            "ai-recommendations",
+            422,  # Validation error
+            data={"service_category": "Home Services"}
+        )
+        
+        # Test with empty data
+        self.run_test(
+            "AI Recommendations - Empty Request",
+            "POST",
+            "ai-recommendations",
+            422,  # Validation error
+            data={}
+        )
+
     def test_error_cases(self):
         """Test various error cases"""
         print("\n🔍 Testing Error Cases...")
