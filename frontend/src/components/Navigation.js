@@ -51,10 +51,16 @@ const Navigation = () => {
                 Post Request
               </Link>
               <Link 
+                to="/manage-requests" 
+                className={`nav-link-clean ${isActive('/manage-requests') ? 'active' : ''}`}
+              >
+                Manage Requests
+              </Link>
+              <Link 
                 to="/my-requests" 
                 className={`nav-link-clean ${isActive('/my-requests') ? 'active' : ''}`}
               >
-                My Requests
+                View All Requests
               </Link>
             </>
           )}
