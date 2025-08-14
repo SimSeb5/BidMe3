@@ -1467,6 +1467,7 @@ async def clear_test_data():
 @app.on_event("startup")
 async def startup_event():
     await initialize_sample_providers()
+    await initialize_sample_service_requests()
 
 # Include the router in the main app
 app.include_router(api_router)
