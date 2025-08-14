@@ -1209,44 +1209,73 @@ async def get_service_provider(provider_id: str):
     
     return serialize_mongo_doc(provider)
 
-async def get_ai_recommendations(service_category: str, description: str, location: str = None):
-    """Get AI-powered service provider recommendations"""
+async def get_ai_recommendations(service_category: str, description: str, location: str = None, title: str = None, budget_min: float = None, budget_max: float = None, deadline: str = None, urgency_level: str = None):
+    """Get AI-powered service provider recommendations using comprehensive request details"""
     try:
         # Initialize AI chat
         chat = LlmChat(
             api_key=os.environ.get('EMERGENT_LLM_KEY'),
             session_id=f"recommendations_{uuid.uuid4()}",
-            system_message="""You are an AI assistant that helps match customers with the best service providers based on their location and service needs.
+            system_message="""You are an AI assistant that helps match customers with the best service providers based on their comprehensive service request details.
 
-Your task is to analyze service requests and recommend the most suitable providers from a database.
+Your task is to analyze service requests and recommend the most suitable providers, considering all available information about the project.
 
 You should consider:
-1. Geographic proximity to the customer
-2. Service category match
-3. Provider ratings and reviews
-4. Provider specializations
-5. Availability and response time
+1. Service category and specific requirements
+2. Project title and detailed description  
+3. Budget constraints and expectations
+4. Timeline and urgency level
+5. Geographic location and proximity
+6. Provider ratings, reviews, and specializations
+7. Market pricing for similar services
 
-Always provide practical, helpful recommendations with clear reasoning."""
+Always provide practical, helpful recommendations with clear reasoning based on the specific project details."""
         ).with_model("openai", "gpt-4o-mini")
 
-        # Create recommendation prompt
-        user_message = UserMessage(
-            text=f"""Please help me find the best service providers for this request:
+        # Build comprehensive project details
+        project_details = {
+            "service_category": service_category,
+            "description": description
+        }
+        
+        if title:
+            project_details["title"] = title
+        if budget_min and budget_max:
+            project_details["budget_range"] = f"${budget_min:,.0f} - ${budget_max:,.0f}"
+        elif budget_min:
+            project_details["minimum_budget"] = f"${budget_min:,.0f}"
+        elif budget_max:
+            project_details["maximum_budget"] = f"${budget_max:,.0f}"
+        if deadline:
+            project_details["deadline"] = deadline
+        if urgency_level:
+            project_details["urgency"] = urgency_level
+        if location:
+            project_details["location"] = location
 
-Service Category: {service_category}
-Description: {description}
-Location: {location or "Not specified"}
+        # Create enhanced recommendation prompt
+        prompt_parts = [
+            f"Please help me find the best service providers for this comprehensive project request:",
+            f"",
+            f"**Project Overview:**"
+        ]
+        
+        for key, value in project_details.items():
+            prompt_parts.append(f"- {key.replace('_', ' ').title()}: {value}")
+        
+        prompt_parts.extend([
+            f"",
+            f"Based on this detailed information, what should I look for in service providers? Please provide:",
+            f"1. Key qualifications to look for (considering the project scope and budget)",
+            f"2. Important questions to ask providers (specific to this project)",
+            f"3. Red flags to avoid (relevant to this service category)",
+            f"4. Realistic price expectations (considering the provided budget range)",
+            f"5. Timeline considerations (factoring in urgency and deadline)",
+            f"",
+            f"Format your response as a JSON object with these keys: qualifications, questions, red_flags, price_range, timeline."
+        ])
 
-Based on this information, what should I look for in service providers? Please provide:
-1. Key qualifications to look for
-2. Important questions to ask providers
-3. Red flags to avoid
-4. Typical price ranges for this service
-5. Timeline expectations
-
-Format your response as a JSON object with these keys: qualifications, questions, red_flags, price_range, timeline."""
-        )
+        user_message = UserMessage(text="\n".join(prompt_parts))
 
         # Get AI response
         response = await chat.send_message(user_message)
@@ -1255,25 +1284,53 @@ Format your response as a JSON object with these keys: qualifications, questions
         try:
             ai_insights = json.loads(response)
         except:
-            # Fallback if JSON parsing fails
+            # Enhanced fallback based on project details
+            budget_guidance = "Get multiple quotes for comparison"
+            if budget_min and budget_max:
+                budget_guidance = f"Expect quotes within ${budget_min:,.0f} - ${budget_max:,.0f} range"
+            elif budget_min:
+                budget_guidance = f"Expect quotes starting from ${budget_min:,.0f}"
+            
+            timeline_guidance = "Discuss timeline expectations upfront"
+            if urgency_level == "urgent":
+                timeline_guidance = "Prioritize providers who can start immediately"
+            elif deadline:
+                timeline_guidance = f"Ensure provider can meet deadline by {deadline}"
+            
             ai_insights = {
-                "qualifications": ["Licensed and insured", "Good reviews and ratings", "Relevant experience"],
-                "questions": ["Are you licensed and insured?", "Can you provide references?", "What's your timeline?"],
-                "red_flags": ["No license or insurance", "Unusually low prices", "Pressure for immediate payment"],
-                "price_range": "Varies by project scope",
-                "timeline": "Depends on project complexity"
+                "qualifications": [
+                    "Licensed and insured for this service category",
+                    "Proven experience with similar projects",
+                    "Good reviews and ratings from past clients"
+                ],
+                "questions": [
+                    f"Do you have experience with {service_category.lower()} projects?",
+                    "Can you provide references from similar work?",
+                    "What's your estimated timeline for completion?"
+                ],
+                "red_flags": [
+                    "No proper licensing or insurance",
+                    "Prices significantly below market rate",
+                    "Pressure for full payment upfront"
+                ],
+                "price_range": budget_guidance,
+                "timeline": timeline_guidance
             }
 
         return ai_insights
 
     except Exception as e:
         print(f"AI recommendation error: {e}")
-        # Return fallback recommendations
+        # Return enhanced fallback recommendations
+        budget_guidance = "Get multiple quotes for comparison"
+        if budget_min and budget_max:
+            budget_guidance = f"Expect quotes within ${budget_min:,.0f} - ${budget_max:,.0f} range"
+        
         return {
             "qualifications": ["Licensed and insured", "Good reviews and ratings", "Relevant experience"],
             "questions": ["Are you licensed and insured?", "Can you provide references?", "What's your timeline?"],
             "red_flags": ["No license or insurance", "Unusually low prices", "Pressure for immediate payment"],
-            "price_range": "Get multiple quotes for comparison",
+            "price_range": budget_guidance,
             "timeline": "Discuss timeline expectations upfront"
         }
 
