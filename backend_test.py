@@ -411,6 +411,228 @@ class ServiceConnectAPITester:
             token=self.customer_token
         )
 
+    def test_dual_role_registration(self):
+        """Test registering a user who will have dual roles"""
+        timestamp = datetime.now().strftime('%H%M%S')
+        dual_role_data = {
+            "email": f"dualrole_{timestamp}@test.com",
+            "phone": f"555-{timestamp}",
+            "password": "TestPass123!",
+            "role": "customer",  # Start as customer
+            "first_name": "Dual",
+            "last_name": "Role"
+        }
+        
+        success, response = self.run_test(
+            "Dual Role User Registration",
+            "POST",
+            "auth/register",
+            200,
+            data=dual_role_data
+        )
+        
+        if success and 'access_token' in response:
+            self.dual_role_token = response['access_token']
+            self.dual_role_user = response['user']
+            print(f"   Dual Role User ID: {self.dual_role_user['id']}")
+            print(f"   Initial Roles: {self.dual_role_user.get('roles', [])}")
+            return True
+        return False
+
+    def test_add_provider_role(self):
+        """Test adding provider role to existing customer"""
+        if not self.dual_role_token:
+            print("❌ No dual role user to test with")
+            return False
+            
+        role_data = {"role": "provider"}
+        
+        success, response = self.run_test(
+            "Add Provider Role to Customer",
+            "POST",
+            "user/add-role",
+            200,
+            data=role_data,
+            token=self.dual_role_token
+        )
+        
+        if success:
+            print(f"   Updated Roles: {response.get('roles', [])}")
+            # Update our stored user data
+            self.dual_role_user = response
+            return True
+        return False
+
+    def test_add_customer_role_to_provider(self):
+        """Test adding customer role to existing provider"""
+        if not self.provider_token:
+            print("❌ No provider user to test with")
+            return False
+            
+        role_data = {"role": "customer"}
+        
+        success, response = self.run_test(
+            "Add Customer Role to Provider",
+            "POST",
+            "user/add-role",
+            200,
+            data=role_data,
+            token=self.provider_token
+        )
+        
+        if success:
+            print(f"   Updated Roles: {response.get('roles', [])}")
+            return True
+        return False
+
+    def test_get_user_roles(self):
+        """Test getting current user's roles"""
+        if not self.dual_role_token:
+            print("❌ No dual role user to test with")
+            return False
+            
+        return self.run_test(
+            "Get User Roles",
+            "GET",
+            "user/roles",
+            200,
+            token=self.dual_role_token
+        )
+
+    def test_dual_role_functionality(self):
+        """Test that dual role user can perform both customer and provider actions"""
+        if not self.dual_role_token or not self.dual_role_user:
+            print("❌ No dual role user to test with")
+            return False
+            
+        # Test creating service request as customer
+        request_data = {
+            "title": "Dual Role Test Service Request",
+            "description": "Testing dual role functionality",
+            "category": "Professional Services",
+            "budget_min": 50.0,
+            "budget_max": 100.0,
+            "location": "Test City"
+        }
+        
+        success, response = self.run_test(
+            "Dual Role User - Create Service Request",
+            "POST",
+            "service-requests",
+            200,
+            data=request_data,
+            token=self.dual_role_token
+        )
+        
+        dual_role_request_id = None
+        if success and 'id' in response:
+            dual_role_request_id = response['id']
+            print(f"   Dual Role Service Request ID: {dual_role_request_id}")
+        
+        # Test creating provider profile
+        profile_data = {
+            "business_name": "Dual Role Services",
+            "description": "Testing dual role provider functionality",
+            "services_offered": ["Professional Services"],
+            "website_url": "https://dualrole.com"
+        }
+        
+        success2, response2 = self.run_test(
+            "Dual Role User - Create Provider Profile",
+            "POST",
+            "provider-profile",
+            200,
+            data=profile_data,
+            token=self.dual_role_token
+        )
+        
+        return success and success2
+
+    def test_image_upload(self):
+        """Test image upload functionality"""
+        # Create a simple test image (1x1 pixel PNG)
+        import base64
+        
+        # Minimal PNG data (1x1 transparent pixel)
+        png_data = base64.b64decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI9jU77yQAAAABJRU5ErkJggg=='
+        )
+        
+        # Prepare multipart form data
+        import requests
+        
+        url = f"{self.base_url}/upload-image"
+        headers = {}
+        if self.customer_token:
+            headers['Authorization'] = f'Bearer {self.customer_token}'
+        
+        files = {'file': ('test.png', png_data, 'image/png')}
+        
+        self.tests_run += 1
+        print(f"\n🔍 Testing Image Upload...")
+        print(f"   URL: {url}")
+        
+        try:
+            response = requests.post(url, files=files, headers=headers)
+            
+            success = response.status_code == 200
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                try:
+                    response_data = response.json()
+                    print(f"   Response: {json.dumps(response_data, indent=2)[:200]}...")
+                    if 'image' in response_data:
+                        self.uploaded_image = response_data['image']
+                        print(f"   Image uploaded successfully")
+                    return True
+                except:
+                    return True
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                try:
+                    error_data = response.json()
+                    print(f"   Error: {error_data}")
+                except:
+                    print(f"   Error: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
+
+    def test_service_request_with_images(self):
+        """Test creating service request with images"""
+        if not self.uploaded_image:
+            print("❌ No uploaded image to test with")
+            return False
+            
+        request_data = {
+            "title": "Service Request with Images",
+            "description": "Testing service request creation with image uploads",
+            "category": "Home Services",
+            "budget_min": 75.0,
+            "budget_max": 150.0,
+            "location": "Image Test City",
+            "images": [self.uploaded_image],  # Include the uploaded image
+            "show_best_bids": True
+        }
+        
+        success, response = self.run_test(
+            "Create Service Request with Images",
+            "POST",
+            "service-requests",
+            200,
+            data=request_data,
+            token=self.customer_token
+        )
+        
+        if success and 'id' in response:
+            print(f"   Service Request with Images ID: {response['id']}")
+            print(f"   Images included: {len(response.get('images', []))}")
+            return True
+        return False
+
     def test_error_cases(self):
         """Test various error cases"""
         print("\n🔍 Testing Error Cases...")
