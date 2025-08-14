@@ -240,6 +240,93 @@ class BidMessageCreate(BaseModel):
     bid_id: str
     message: str
 
+class CategorySelectionRequest(BaseModel):
+    title: str
+    description: str
+
+# AI Category Selection endpoint
+@api_router.post("/ai-category-selection")
+async def get_ai_category_selection(request: CategorySelectionRequest):
+    """Get AI-powered category selection based on title and description"""
+    
+    try:
+        # Use the existing emergent LLM integration
+        chat = LlmChat(
+            api_key=os.environ.get('EMERGENT_LLM_KEY'),
+            session_id=f"category-selection-{str(uuid.uuid4())}",
+            system_message=f"""You are a service category classifier. Based on the service title and description provided, select the EXACT category from this list that best matches the service:
+
+{', '.join(SERVICE_CATEGORIES)}
+
+Rules:
+1. You must respond with ONLY the exact category name from the list above
+2. Do not add any explanation or additional text
+3. If unclear, pick the closest match
+4. Do not create new categories"""
+        ).with_model("openai", "gpt-4o-mini")
+        
+        user_message = UserMessage(
+            text=f"Title: {request.title}\nDescription: {request.description}\n\nSelect the best category:"
+        )
+        
+        response = await asyncio.wait_for(
+            chat.send_message(user_message),
+            timeout=10.0
+        )
+        
+        selected_category = response.strip()
+        
+        # Validate that the response is one of our valid categories
+        if selected_category not in SERVICE_CATEGORIES:
+            # Find the closest match as fallback
+            selected_category = "Other"
+            for category in SERVICE_CATEGORIES:
+                if any(word.lower() in selected_category.lower() for word in category.split()):
+                    selected_category = category
+                    break
+        
+        return {
+            "selected_category": selected_category,
+            "confidence": "high" if selected_category != "Other" else "low"
+        }
+        
+    except asyncio.TimeoutError:
+        # Fallback to "Other" if AI is slow
+        return {
+            "selected_category": "Other",
+            "confidence": "low",
+            "fallback_reason": "timeout"
+        }
+    
+    except Exception as e:
+        print(f"AI category selection error: {e}")
+        # Fallback based on simple keyword matching
+        title_desc = f"{request.title} {request.description}".lower()
+        
+        category_keywords = {
+            "Home Services": ["plumbing", "electrical", "cleaning", "repair", "fix", "maintenance"],
+            "Construction & Renovation": ["construction", "renovation", "remodel", "build", "kitchen", "bathroom"],
+            "Technology & IT": ["website", "app", "software", "computer", "tech", "development"],
+            "Creative & Design": ["design", "logo", "graphic", "creative", "art", "photography"],
+            "Professional Services": ["legal", "accounting", "consulting", "business", "professional"],
+            "Transportation": ["moving", "transport", "delivery", "logistics"],
+            "Health & Wellness": ["health", "fitness", "wellness", "medical", "therapy"]
+        }
+        
+        for category, keywords in category_keywords.items():
+            if any(keyword in title_desc for keyword in keywords):
+                return {
+                    "selected_category": category,
+                    "confidence": "medium",
+                    "fallback_reason": "keyword_matching"
+                }
+        
+        return {
+            "selected_category": "Other",
+            "confidence": "low",
+            "fallback_reason": "no_match_found"
+        }
+
 class LocationRecommendationRequest(BaseModel):
     service_category: str
     description: str
