@@ -2055,6 +2055,14 @@ def main():
     tester.test_ai_recommendations_with_coordinates()
     tester.test_ai_recommendations_error_cases()
     
+    # AI CATEGORY SELECTION TESTS (REVIEW REQUEST FOCUS)
+    print("\n🎯 Testing AI Category Selection (REVIEW REQUEST FOCUS)...")
+    tester.test_ai_category_selection_clear_descriptions()
+    tester.test_ai_category_selection_edge_cases()
+    tester.test_ai_category_selection_validation()
+    tester.test_ai_category_selection_integration()
+    tester.test_dashboard_count_updates()
+    
     # NEW ENHANCED FEATURES TESTING (REVIEW REQUEST FOCUS)
     print("\n🚀 Testing Enhanced ServiceConnect Features (REVIEW REQUEST FOCUS)...")
     tester.test_enhanced_subcategories()
