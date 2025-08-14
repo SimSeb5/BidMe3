@@ -45,7 +45,7 @@ SERVICE_CATEGORIES = [
 ]
 
 # Models
-class UserRole(BaseModel):
+class UserRole:
     CUSTOMER = "customer"
     PROVIDER = "provider"
 
