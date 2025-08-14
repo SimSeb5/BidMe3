@@ -322,16 +322,98 @@ async def create_service_request(request_data: ServiceRequestCreate, current_use
     return service_request
 
 @api_router.get("/service-requests", response_model=List[Dict[str, Any]])
-async def get_service_requests(category: Optional[str] = None, status: Optional[str] = None):
+async def get_service_requests(
+    category: Optional[str] = None, 
+    status: Optional[str] = None,
+    location: Optional[str] = None,
+    budget_min: Optional[float] = None,
+    budget_max: Optional[float] = None,
+    deadline_before: Optional[str] = None,
+    deadline_after: Optional[str] = None,
+    search: Optional[str] = None,
+    sort_by: Optional[str] = "created_at",
+    sort_order: Optional[str] = "desc",
+    limit: Optional[int] = 100
+):
+    """
+    Get service requests with advanced filtering options
+    
+    Parameters:
+    - category: Filter by service category
+    - status: Filter by request status (open, in_progress, completed, cancelled)
+    - location: Filter by location (partial match)
+    - budget_min: Minimum budget filter
+    - budget_max: Maximum budget filter
+    - deadline_before: Filter requests with deadline before this date (ISO format)
+    - deadline_after: Filter requests with deadline after this date (ISO format)
+    - search: Search in title and description
+    - sort_by: Sort field (created_at, budget_min, budget_max, deadline)
+    - sort_order: Sort order (asc, desc)
+    - limit: Maximum number of results
+    """
     filter_dict = {}
+    
+    # Basic filters
     if category:
         filter_dict["category"] = category
     if status:
         filter_dict["status"] = status
     
-    requests = await db.service_requests.find(filter_dict).sort("created_at", -1).to_list(100)
+    # Location filter (case-insensitive partial match)
+    if location:
+        filter_dict["location"] = {"$regex": location, "$options": "i"}
     
-    # Add user info for each request
+    # Budget filters
+    budget_filter = {}
+    if budget_min is not None:
+        budget_filter["$gte"] = budget_min
+    if budget_max is not None:
+        budget_filter["$lte"] = budget_max
+    
+    if budget_filter:
+        # Filter where either budget_min or budget_max falls within range
+        filter_dict["$or"] = [
+            {"budget_min": budget_filter},
+            {"budget_max": budget_filter},
+            {"$and": [
+                {"budget_min": {"$lte": budget_max if budget_max else float('inf')}},
+                {"budget_max": {"$gte": budget_min if budget_min else 0}}
+            ]}
+        ]
+    
+    # Deadline filters
+    if deadline_before or deadline_after:
+        deadline_filter = {}
+        if deadline_before:
+            try:
+                deadline_filter["$lte"] = datetime.fromisoformat(deadline_before.replace('Z', '+00:00'))
+            except ValueError:
+                pass
+        if deadline_after:
+            try:
+                deadline_filter["$gte"] = datetime.fromisoformat(deadline_after.replace('Z', '+00:00'))
+            except ValueError:
+                pass
+        if deadline_filter:
+            filter_dict["deadline"] = deadline_filter
+    
+    # Search filter (in title and description)
+    if search:
+        filter_dict["$or"] = [
+            {"title": {"$regex": search, "$options": "i"}},
+            {"description": {"$regex": search, "$options": "i"}}
+        ]
+    
+    # Sort configuration
+    sort_field = sort_by if sort_by in ["created_at", "budget_min", "budget_max", "deadline", "title"] else "created_at"
+    sort_direction = -1 if sort_order == "desc" else 1
+    
+    # Limit validation
+    limit = min(max(1, limit), 500)  # Between 1 and 500
+    
+    requests = await db.service_requests.find(filter_dict).sort(sort_field, sort_direction).limit(limit).to_list(limit)
+    
+    # Add user info and bid count for each request
     for request in requests:
         user = await db.users.find_one({"id": request["user_id"]})
         if user:
@@ -340,6 +422,18 @@ async def get_service_requests(category: Optional[str] = None, status: Optional[
         # Get bid count
         bid_count = await db.bids.count_documents({"service_request_id": request["id"]})
         request["bid_count"] = bid_count
+        
+        # Add average bid price if bids exist
+        if bid_count > 0:
+            pipeline = [
+                {"$match": {"service_request_id": request["id"]}},
+                {"$group": {"_id": None, "avg_price": {"$avg": "$price"}, "min_price": {"$min": "$price"}, "max_price": {"$max": "$price"}}}
+            ]
+            bid_stats = await db.bids.aggregate(pipeline).to_list(1)
+            if bid_stats:
+                request["avg_bid_price"] = round(bid_stats[0]["avg_price"], 2)
+                request["min_bid_price"] = bid_stats[0]["min_price"]
+                request["max_bid_price"] = bid_stats[0]["max_price"]
     
     return serialize_mongo_doc(requests)
 
