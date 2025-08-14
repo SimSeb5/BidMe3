@@ -287,7 +287,7 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
 # Service Request Routes
 @api_router.post("/service-requests", response_model=ServiceRequest)
 async def create_service_request(request_data: ServiceRequestCreate, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "customer":
+    if "customer" not in current_user.get("roles", []):
         raise HTTPException(status_code=403, detail="Only customers can create service requests")
     
     service_request = ServiceRequest(**request_data.dict(), user_id=current_user["id"])
