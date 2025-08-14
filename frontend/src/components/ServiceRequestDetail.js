@@ -260,6 +260,48 @@ const ServiceRequestDetail = () => {
                       placeholder="Explain your approach, timeline, experience, and why you're the best choice..."
                     />
                   </div>
+
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold text-gray-900 mb-3">📅 Timeline Information</h4>
+                    <div className="grid grid-3 gap-4">
+                      <div className="form-group">
+                        <label className="form-label">Available Start Date</label>
+                        <input
+                          type="date"
+                          className="form-input"
+                          value={bidForm.start_date}
+                          onChange={(e) => setBidForm({ ...bidForm, start_date: e.target.value })}
+                          placeholder="When can you start?"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">Duration (Days)</label>
+                        <input
+                          type="number"
+                          className="form-input"
+                          value={bidForm.duration_days}
+                          onChange={(e) => setBidForm({ ...bidForm, duration_days: e.target.value })}
+                          placeholder="How many days needed?"
+                          min="1"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">Duration Description</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={bidForm.duration_description}
+                          onChange={(e) => setBidForm({ ...bidForm, duration_description: e.target.value })}
+                          placeholder="e.g., 2-3 weeks"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      💡 Providing timeline information helps customers choose the right provider for their schedule.
+                    </p>
+                  </div>
                   
                   <div className="flex gap-4">
                     <button
