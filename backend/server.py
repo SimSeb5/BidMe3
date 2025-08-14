@@ -2062,9 +2062,9 @@ async def initialize_comprehensive_sample_data():
                 "family", "professional", "modern", "traditional", "eco-friendly", "high-end", "budget-conscious",
                 "custom", "standard", "premium", "basic", "advanced", "comprehensive", "specialized"]
     
-    # Create 600+ service requests
+    # Create 800+ realistic service requests
     sample_requests = []
-    for i in range(650):  # 650 service requests
+    for i in range(850):  # 850 service requests for hundreds of examples
         template = request_templates[i % len(request_templates)]
         title_template, desc_template, category = template
         specific = specifics[i % len(specifics)]
@@ -2074,36 +2074,37 @@ async def initialize_comprehensive_sample_data():
         
         # Add uniqueness for duplicates
         if i >= len(request_templates):
-            title += f" - Project #{i - len(request_templates) + 1}"
-            description += f" Project reference: REQ{i+1000}."
+            batch_num = (i // len(request_templates)) + 1
+            title += f" - Request #{batch_num}-{(i % len(request_templates)) + 1}"
+            description += f" This is request #{i + 1} in our marketplace. Project reference: REQ{i+2000}."
         
         # Varied budget ranges
-        base_budget = 100 + (i % 50) * 100  # Base from $100 to $5000
+        base_budget = 100 + (i % 100) * 50  # Base from $100 to $5000
         if category == "Construction & Renovation":
-            budget_min = base_budget * 5
-            budget_max = budget_min * 3
+            budget_min = base_budget * 8
+            budget_max = budget_min * 4
         elif category == "Technology & IT":
+            budget_min = base_budget * 4
+            budget_max = budget_min * 3
+        elif category == "Professional Services":
             budget_min = base_budget * 3
             budget_max = budget_min * 2.5
-        elif category == "Professional Services":
-            budget_min = base_budget * 2
-            budget_max = budget_min * 2
         else:
-            budget_min = base_budget
-            budget_max = budget_min * 1.8
+            budget_min = base_budget * 2
+            budget_max = budget_min * 2.2
         
-        # Add images to many requests
+        # Add images to most requests
         request_images = []
-        if i % 2 == 0:  # 50% have images
+        if i % 3 == 0:  # 67% have images
             num_images = min(3, (i % 4) + 1)
             request_images = sample_images[:num_images]
         
-        # Varied statuses with more completed projects
-        if i % 5 == 0:
+        # Status distribution - lots of completed projects
+        if i % 4 == 0:  # 25% completed
             status = "completed"
-        elif i % 5 == 1:
-            status = "in_progress"
-        else:
+        elif i % 8 == 1:  # 12.5% in progress
+            status = "in_progress"  
+        else:  # 62.5% open
             status = "open"
         
         request_data = {
@@ -2114,12 +2115,12 @@ async def initialize_comprehensive_sample_data():
             "category": category,
             "budget_min": float(budget_min),
             "budget_max": float(budget_max),
-            "deadline": datetime.utcnow() + timedelta(days=1 + i%60) if i % 4 != 0 else None,
+            "deadline": datetime.utcnow() + timedelta(days=1 + i%90) if i % 5 != 0 else None,
             "location": cities[i % len(cities)][0],
             "status": status,
-            "show_best_bids": i % 3 == 0,  # 33% show public bids
+            "show_best_bids": i % 4 == 0,  # 25% show public bids
             "images": request_images,
-            "created_at": datetime.utcnow() - timedelta(days=i%30, hours=i%24),
+            "created_at": datetime.utcnow() - timedelta(days=i%60, hours=i%24),
             "updated_at": datetime.utcnow()
         }
         sample_requests.append(request_data)
