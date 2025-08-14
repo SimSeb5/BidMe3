@@ -199,6 +199,14 @@ const ServiceRequestForm = () => {
                     serviceCategory={formData.category}
                     description={formData.description}
                     location={formData.location}
+                    title={formData.title}
+                    budgetMin={formData.budget_min}
+                    budgetMax={formData.budget_max}
+                    deadline={formData.deadline}
+                    urgencyLevel={formData.deadline ? 
+                      (new Date(formData.deadline) - new Date() < 7 * 24 * 60 * 60 * 1000 ? 'urgent' : 
+                       new Date(formData.deadline) - new Date() > 30 * 24 * 60 * 60 * 1000 ? 'flexible' : 'moderate') 
+                      : 'flexible'}
                   />
                 )}
 
