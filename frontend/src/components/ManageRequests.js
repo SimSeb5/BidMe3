@@ -10,6 +10,7 @@ const ManageRequests = () => {
   const [loading, setLoading] = useState(true);
   const [editingRequest, setEditingRequest] = useState(null);
   const [bidsForRequest, setBidsForRequest] = useState({});
+  const [showBidsModal, setShowBidsModal] = useState(null);
   const [showStatusModal, setShowStatusModal] = useState(null);
 
   useEffect(() => {
