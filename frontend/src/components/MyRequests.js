@@ -12,8 +12,10 @@ const MyRequests = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user?.role === 'customer') {
+    if (user?.roles?.includes('customer') || user?.role === 'customer') {
       fetchMyRequests();
+    } else {
+      setLoading(false);
     }
   }, [user]);
 
