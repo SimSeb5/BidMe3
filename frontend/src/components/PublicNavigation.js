@@ -11,7 +11,7 @@ const PublicNavigation = () => {
       <div className="nav-container-clean">
         <Link to="/" className="nav-brand-clean">
           <span className="brand-icon">⚡</span>
-          ServiceConnect
+          BidMe
         </Link>
         
         <div className="nav-links-clean">
