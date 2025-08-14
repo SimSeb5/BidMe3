@@ -82,6 +82,34 @@ const ServiceRequestForm = () => {
     }
   };
 
+  const getAiCategorySelection = async (title, description) => {
+    if (!title.trim() || !description.trim()) return;
+    
+    setCategoryLoading(true);
+    try {
+      const response = await axios.post(`${API}/ai-category-selection`, {
+        title: title.trim(),
+        description: description.trim()
+      });
+      
+      if (response.data.selected_category) {
+        setFormData(prev => ({ 
+          ...prev, 
+          category: response.data.selected_category 
+        }));
+        setAiCategorySelected(true);
+        
+        // Show AI recommendations since we now have category and description
+        setShowRecommendations(true);
+      }
+    } catch (error) {
+      console.error('Failed to get AI category selection:', error);
+      // Don't show error to user, just let them select manually
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
