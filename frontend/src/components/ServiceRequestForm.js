@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../App';
 import ImageUpload from './ImageUpload';
+import AIRecommendations from './AIRecommendations';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -24,6 +25,8 @@ const ServiceRequestForm = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
 
   useEffect(() => {
     // Support both old and new role systems
@@ -33,6 +36,7 @@ const ServiceRequestForm = () => {
       return;
     }
     fetchCategories();
+    detectLocation();
   }, [user, navigate]);
 
   const fetchCategories = async () => {
@@ -44,12 +48,52 @@ const ServiceRequestForm = () => {
     }
   };
 
+  const detectLocation = async () => {
+    setLocationLoading(true);
+    
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            // Use reverse geocoding to get city/state from coordinates
+            const { latitude, longitude } = position.coords;
+            
+            // For demo purposes, we'll use a simple approach
+            // In production, you'd use a geocoding service like Google Maps API
+            const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+            const data = await response.json();
+            
+            const location = `${data.city}, ${data.principalSubdivision}`;
+            setFormData(prev => ({ ...prev, location }));
+          } catch (error) {
+            console.log('Could not detect location automatically');
+          }
+          setLocationLoading(false);
+        },
+        (error) => {
+          console.log('Location access denied');
+          setLocationLoading(false);
+        }
+      );
+    } else {
+      setLocationLoading(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
       [name]: type === 'checkbox' ? checked : value
     });
+
+    // Show AI recommendations when we have enough info
+    if ((name === 'category' || name === 'description') && 
+        formData.category && formData.description && 
+        (name === 'category' ? value : formData.category) &&
+        (name === 'description' ? value : formData.description)) {
+      setShowRecommendations(true);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -92,12 +136,12 @@ const ServiceRequestForm = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="card">
             <div className="card-header">
               <h1 className="text-2xl font-bold text-gray-900">Request a Service</h1>
               <p className="text-gray-600 mt-1">
-                Describe your service needs and get competitive bids from qualified providers
+                Describe your service needs and get AI-powered recommendations plus competitive bids
               </p>
             </div>
             
@@ -149,6 +193,15 @@ const ServiceRequestForm = () => {
                   />
                 </div>
 
+                {/* AI Recommendations appear here when conditions are met */}
+                {showRecommendations && formData.category && formData.description && (
+                  <AIRecommendations
+                    serviceCategory={formData.category}
+                    description={formData.description}
+                    location={formData.location}
+                  />
+                )}
+
                 {/* Image Upload Section */}
                 <div className="form-group">
                   <label className="form-label">Project Images (Optional)</label>
@@ -193,15 +246,21 @@ const ServiceRequestForm = () => {
                 </div>
                 
                 <div className="form-group">
-                  <label className="form-label">Location (Optional)</label>
+                  <label className="form-label">
+                    Location 
+                    {locationLoading && <span className="text-blue-600 ml-2">🌍 Detecting...</span>}
+                  </label>
                   <input
                     type="text"
                     name="location"
                     className="form-input"
                     value={formData.location}
                     onChange={handleChange}
-                    placeholder="City, State or specific address if needed"
+                    placeholder="City, State or specific address"
                   />
+                  <p className="text-sm text-gray-600 mt-1">
+                    Adding your location helps us recommend nearby service providers
+                  </p>
                 </div>
                 
                 <div className="form-group">
