@@ -426,7 +426,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "BidMe Marketplace Enhancements Testing Complete"
+    - "Dashboard Count Updates"
+    - "Service Request Form Integration"
+    - "AI-Driven Category Selection"
+    - "Form Field Reordering"
   stuck_tasks:
     - "Sample Data Initialization Enhancement"
   test_all: false
