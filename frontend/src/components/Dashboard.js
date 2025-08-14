@@ -221,7 +221,7 @@ const Dashboard = () => {
         <div className="section-clean text-center">
           <h2 className="section-title">Get Started</h2>
           <div className="quick-actions">
-            {user.role === 'customer' ? (
+            {isCustomer && (
               <>
                 <div className="action-card">
                   <div className="action-icon">📝</div>
@@ -240,7 +240,8 @@ const Dashboard = () => {
                   </Link>
                 </div>
               </>
-            ) : (
+            )}
+            {isProvider && (
               <>
                 <div className="action-card">
                   <div className="action-icon">🔍</div>
