@@ -1,6 +1,6 @@
 <file>
       <absolute_file_name>/app/backend/sample_data.py</absolute_file_name>
-      <content">import uuid
+      <content>import uuid
 from datetime import datetime, timedelta
 
 def get_comprehensive_sample_data():
