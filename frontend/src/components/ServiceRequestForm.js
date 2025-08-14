@@ -209,21 +209,49 @@ const ServiceRequestForm = () => {
                 </div>
                 
                 <div className="form-group">
-                  <label className="form-label">Category *</label>
+                  <label className="form-label">
+                    Category 
+                    {categoryLoading && <span className="text-blue-600 ml-2">🤖 AI selecting...</span>}
+                    {aiCategorySelected && !categoryLoading && <span className="text-green-600 ml-2">✓ AI selected</span>}
+                  </label>
                   <select
                     name="category"
                     className="form-select"
                     value={formData.category}
                     onChange={handleChange}
                     required
+                    disabled={categoryLoading}
                   >
-                    <option value="">Select a category</option>
+                    <option value="">
+                      {categoryLoading ? "AI is selecting category..." : "Select a category or let AI choose"}
+                    </option>
                     {categories.map((category) => (
                       <option key={category} value={category}>
                         {category}
                       </option>
                     ))}
                   </select>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Fill in the title and description below, and AI will automatically select the best category
+                  </p>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">
+                    Location 
+                    {locationLoading && <span className="text-blue-600 ml-2">🌍 Detecting...</span>}
+                  </label>
+                  <input
+                    type="text"
+                    name="location"
+                    className="form-input"
+                    value={formData.location}
+                    onChange={handleChange}
+                    placeholder="City, State or specific address"
+                  />
+                  <p className="text-sm text-gray-600 mt-1">
+                    Adding your location helps us recommend nearby service providers
+                  </p>
                 </div>
                 
                 <div className="form-group">
@@ -237,6 +265,9 @@ const ServiceRequestForm = () => {
                     rows={5}
                     placeholder="Provide detailed information about what you need, any specific requirements, materials, timeline, etc."
                   />
+                  <p className="text-sm text-gray-600 mt-1">
+                    Be detailed - AI will use this information to suggest the best category and providers
+                  </p>
                 </div>
 
                 {/* AI Recommendations appear here when conditions are met */}
