@@ -854,6 +854,327 @@ class ServiceConnectAPITester:
             data={}
         )
 
+    # NEW ENHANCED FEATURES TESTING
+    def test_enhanced_subcategories(self):
+        """Test the new enhanced subcategories endpoints"""
+        print("\n🔍 Testing Enhanced Subcategories...")
+        
+        # Test getting subcategories for a specific category
+        success1, response1 = self.run_test(
+            "Get Subcategories for Home Services",
+            "GET",
+            "subcategories/Home Services",
+            200
+        )
+        
+        if success1:
+            subcategories = response1.get('subcategories', [])
+            print(f"   ✅ Home Services subcategories: {len(subcategories)}")
+            expected_subcategories = ["Plumbing", "Electrical", "HVAC", "Cleaning"]
+            for sub in expected_subcategories:
+                if sub in subcategories:
+                    print(f"   ✅ Found expected subcategory: {sub}")
+                else:
+                    print(f"   ⚠️  Missing expected subcategory: {sub}")
+        
+        # Test getting all subcategories
+        success2, response2 = self.run_test(
+            "Get All Subcategories",
+            "GET",
+            "all-subcategories",
+            200
+        )
+        
+        if success2:
+            all_subcategories = response2
+            print(f"   ✅ Total main categories with subcategories: {len(all_subcategories)}")
+            
+            # Check some expected categories
+            expected_categories = ["Home Services", "Technology & IT", "Creative & Design", "Construction & Renovation"]
+            for category in expected_categories:
+                if category in all_subcategories:
+                    subs = all_subcategories[category]
+                    print(f"   ✅ {category}: {len(subs)} subcategories")
+                else:
+                    print(f"   ⚠️  Missing category: {category}")
+        
+        return success1 and success2
+
+    def test_enhanced_service_request_filtering(self):
+        """Test the enhanced service request filtering capabilities"""
+        print("\n🔍 Testing Enhanced Service Request Filtering...")
+        
+        all_success = True
+        
+        # Test subcategory filtering
+        success1, response1 = self.run_test(
+            "Filter by Subcategory - Plumbing",
+            "GET",
+            "service-requests",
+            200,
+            params={"subcategory": "plumbing"}
+        )
+        
+        if success1:
+            requests = response1 if isinstance(response1, list) else []
+            print(f"   ✅ Plumbing subcategory filter: {len(requests)} requests")
+            
+            # Check if requests contain plumbing-related content
+            plumbing_found = False
+            for req in requests[:3]:  # Check first 3
+                title_desc = f"{req.get('title', '')} {req.get('description', '')}".lower()
+                if 'plumb' in title_desc or 'leak' in title_desc or 'pipe' in title_desc:
+                    plumbing_found = True
+                    print(f"   ✅ Found plumbing-related request: {req.get('title', 'Unknown')}")
+                    break
+            
+            if not plumbing_found and len(requests) > 0:
+                print(f"   ⚠️  No obvious plumbing content found in filtered results")
+        else:
+            all_success = False
+        
+        # Test urgency filtering
+        success2, response2 = self.run_test(
+            "Filter by Urgency - Urgent",
+            "GET",
+            "service-requests",
+            200,
+            params={"urgency": "urgent"}
+        )
+        
+        if success2:
+            urgent_requests = response2 if isinstance(response2, list) else []
+            print(f"   ✅ Urgent requests filter: {len(urgent_requests)} requests")
+            
+            # Check urgency levels in response
+            for req in urgent_requests[:3]:
+                urgency = req.get('urgency_level', 'unknown')
+                print(f"   Request urgency: {urgency}")
+        else:
+            all_success = False
+        
+        # Test flexible urgency filtering
+        success3, response3 = self.run_test(
+            "Filter by Urgency - Flexible",
+            "GET",
+            "service-requests",
+            200,
+            params={"urgency": "flexible"}
+        )
+        
+        if success3:
+            flexible_requests = response3 if isinstance(response3, list) else []
+            print(f"   ✅ Flexible requests filter: {len(flexible_requests)} requests")
+        else:
+            all_success = False
+        
+        # Test has_images filter
+        success4, response4 = self.run_test(
+            "Filter by Has Images - True",
+            "GET",
+            "service-requests",
+            200,
+            params={"has_images": True}
+        )
+        
+        if success4:
+            image_requests = response4 if isinstance(response4, list) else []
+            print(f"   ✅ Requests with images filter: {len(image_requests)} requests")
+            
+            # Check image_count in response
+            for req in image_requests[:3]:
+                image_count = req.get('image_count', 0)
+                print(f"   Request image count: {image_count}")
+        else:
+            all_success = False
+        
+        # Test show_best_bids_only filter
+        success5, response5 = self.run_test(
+            "Filter by Show Best Bids Only",
+            "GET",
+            "service-requests",
+            200,
+            params={"show_best_bids_only": True}
+        )
+        
+        if success5:
+            best_bid_requests = response5 if isinstance(response5, list) else []
+            print(f"   ✅ Show best bids only filter: {len(best_bid_requests)} requests")
+            
+            # Check show_best_bids flag
+            for req in best_bid_requests[:3]:
+                show_best = req.get('show_best_bids', False)
+                print(f"   Request show_best_bids: {show_best}")
+        else:
+            all_success = False
+        
+        # Test distance-based filtering with coordinates
+        success6, response6 = self.run_test(
+            "Filter by Distance with Coordinates",
+            "GET",
+            "service-requests",
+            200,
+            params={
+                "latitude": 40.7128,
+                "longitude": -74.0060,
+                "distance_km": 50
+            }
+        )
+        
+        if success6:
+            distance_requests = response6 if isinstance(response6, list) else []
+            print(f"   ✅ Distance-based filter: {len(distance_requests)} requests")
+            
+            # Check if distance information is included
+            for req in distance_requests[:2]:
+                if 'distance_km' in req:
+                    print(f"   Request distance info: {req['distance_km']}")
+        else:
+            all_success = False
+        
+        return all_success
+
+    def test_enhanced_response_data(self):
+        """Test that service requests include enhanced response data"""
+        print("\n🔍 Testing Enhanced Response Data...")
+        
+        success, response = self.run_test(
+            "Get Service Requests - Check Enhanced Data",
+            "GET",
+            "service-requests",
+            200,
+            params={"limit": 5}
+        )
+        
+        if success:
+            requests = response if isinstance(response, list) else []
+            print(f"   ✅ Retrieved {len(requests)} requests for data analysis")
+            
+            enhanced_fields_found = {
+                'urgency_level': 0,
+                'image_count': 0,
+                'bid_count': 0,
+                'avg_bid_price': 0,
+                'min_bid_price': 0,
+                'max_bid_price': 0
+            }
+            
+            for req in requests:
+                for field in enhanced_fields_found:
+                    if field in req:
+                        enhanced_fields_found[field] += 1
+                        if enhanced_fields_found[field] == 1:  # First occurrence
+                            print(f"   ✅ Found {field}: {req[field]}")
+            
+            # Summary of enhanced fields
+            print(f"   Enhanced fields coverage:")
+            for field, count in enhanced_fields_found.items():
+                percentage = (count / len(requests) * 100) if requests else 0
+                print(f"   - {field}: {count}/{len(requests)} requests ({percentage:.1f}%)")
+            
+            return True
+        
+        return False
+
+    def test_comprehensive_sample_data(self):
+        """Test that comprehensive sample data has been properly initialized"""
+        print("\n🔍 Testing Comprehensive Sample Data...")
+        
+        # Test service providers data
+        success1, response1 = self.run_test(
+            "Check Comprehensive Service Providers",
+            "GET",
+            "service-providers",
+            200,
+            params={"limit": 20}
+        )
+        
+        providers_quality = False
+        if success1:
+            providers = response1 if isinstance(response1, list) else []
+            print(f"   ✅ Total service providers: {len(providers)}")
+            
+            # Check for diverse locations
+            locations = set()
+            categories = set()
+            verified_count = 0
+            high_rating_count = 0
+            
+            for provider in providers:
+                location = provider.get('location', '')
+                if location:
+                    locations.add(location.split(',')[0])  # Get city part
+                
+                services = provider.get('services', [])
+                for service in services:
+                    categories.add(service)
+                
+                if provider.get('verified', False):
+                    verified_count += 1
+                
+                if provider.get('google_rating', 0) >= 4.5:
+                    high_rating_count += 1
+            
+            print(f"   ✅ Unique locations: {len(locations)} - {list(locations)[:5]}")
+            print(f"   ✅ Service categories: {len(categories)} - {list(categories)[:5]}")
+            print(f"   ✅ Verified providers: {verified_count}/{len(providers)}")
+            print(f"   ✅ High-rated providers (4.5+): {high_rating_count}/{len(providers)}")
+            
+            # Quality check: should have diverse, realistic data
+            providers_quality = (len(locations) >= 5 and len(categories) >= 5 and 
+                               verified_count > 0 and high_rating_count > 0)
+        
+        # Test service requests data
+        success2, response2 = self.run_test(
+            "Check Comprehensive Service Requests",
+            "GET",
+            "service-requests",
+            200,
+            params={"limit": 15}
+        )
+        
+        requests_quality = False
+        if success2:
+            requests = response2 if isinstance(response2, list) else []
+            print(f"   ✅ Total service requests: {len(requests)}")
+            
+            # Check for diverse categories and urgency levels
+            request_categories = set()
+            urgency_levels = set()
+            with_budgets = 0
+            with_deadlines = 0
+            with_images = 0
+            
+            for req in requests:
+                category = req.get('category', '')
+                if category:
+                    request_categories.add(category)
+                
+                urgency = req.get('urgency_level', '')
+                if urgency:
+                    urgency_levels.add(urgency)
+                
+                if req.get('budget_min') or req.get('budget_max'):
+                    with_budgets += 1
+                
+                if req.get('deadline'):
+                    with_deadlines += 1
+                
+                if req.get('image_count', 0) > 0:
+                    with_images += 1
+            
+            print(f"   ✅ Request categories: {len(request_categories)} - {list(request_categories)[:5]}")
+            print(f"   ✅ Urgency levels: {list(urgency_levels)}")
+            print(f"   ✅ Requests with budgets: {with_budgets}/{len(requests)}")
+            print(f"   ✅ Requests with deadlines: {with_deadlines}/{len(requests)}")
+            print(f"   ✅ Requests with images: {with_images}/{len(requests)}")
+            
+            # Quality check: should have diverse, realistic data
+            requests_quality = (len(request_categories) >= 3 and len(urgency_levels) >= 2 and 
+                              with_budgets > 0 and with_deadlines > 0)
+        
+        return success1 and success2 and providers_quality and requests_quality
+
     def test_error_cases(self):
         """Test various error cases"""
         print("\n🔍 Testing Error Cases...")
