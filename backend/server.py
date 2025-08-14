@@ -1706,15 +1706,19 @@ async def startup_event():
 
 async def initialize_comprehensive_sample_data():
     """Initialize the database with comprehensive sample data including bids"""
-    from sample_data import get_comprehensive_sample_data
-    
-    sample_providers, sample_requests, sample_bids = get_comprehensive_sample_data()
     
     # Check if data already exists
     existing_providers = await db.service_providers.count_documents({})
     if existing_providers > 0:
         print(f"Sample data already exists ({existing_providers} providers)")
         return
+    
+    # Sample images (using placeholder image service)
+    sample_images = [
+        "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNmMGY0ZjgiLz4KPHRleHQgeD0iMjAwIiB5PSIxNTAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzM3NDE1MSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+S2l0Y2hlbiBSZW5vdmF0aW9uPC90ZXh0Pgo8L3N2Zz4K",
+        "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNlZGY0ZmYiLz4KPHRleHQgeD0iMjAwIiB5PSIxNTAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzM3NDE1MSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UGx1bWJpbmcgV29yazwvdGV4dD4KPC9zdmc+",
+        "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9IiNmZWY5ZTciLz4KPHRleHQgeD0iMjAwIiB5PSIxNTAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzM3NDE1MSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+V2ViIERldmVsb3BtZW50PC90ZXh0Pgo8L3N2Zz4K"
+    ]
     
     # Create demo user for requests
     demo_user = {
@@ -1733,78 +1737,194 @@ async def initialize_comprehensive_sample_data():
     await db.users.insert_one(demo_user)
     demo_user_id = demo_user["id"]
     
-    # Create provider users for bids
-    provider_users = []
-    for i, provider in enumerate(sample_providers[:10]):  # Create users for first 10 providers
-        provider_user = {
-            "id": str(uuid.uuid4()),
-            "email": f"provider{i+1}@bidme.com",
-            "phone": provider["phone"],
-            "password_hash": get_password_hash("providerpassword"),
-            "roles": ["customer", "provider"],
-            "first_name": provider["business_name"].split()[0],
-            "last_name": "Provider",
-            "is_verified": True,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
-        }
-        await db.users.insert_one(provider_user)
-        provider_users.append(provider_user)
+    # Create 50+ service providers
+    sample_providers = []
+    cities = [
+        ("Manhattan, NY", 40.7589, -73.9851),
+        ("Brooklyn, NY", 40.6782, -73.9442),
+        ("Los Angeles, CA", 34.0522, -118.2437),
+        ("San Francisco, CA", 37.7749, -122.4194),
+        ("Chicago, IL", 41.8781, -87.6298),
+        ("Miami, FL", 25.7617, -80.1918),
+        ("Seattle, WA", 47.6062, -122.3321),
+        ("Denver, CO", 39.7392, -104.9903),
+        ("Boston, MA", 42.3601, -71.0589),
+        ("Austin, TX", 30.2672, -97.7431),
+        ("Phoenix, AZ", 33.4484, -112.0740),
+        ("Portland, OR", 45.5152, -122.6784)
+    ]
     
-    # Add service providers
+    services = ["Home Services", "Construction & Renovation", "Professional Services", "Technology & IT", "Creative & Design", "Business Services"]
+    business_types = ["Pro", "Elite", "Premier", "Expert", "Master", "Quality", "Reliable", "Professional", "Certified", "Trusted"]
+    
+    provider_users = []
+    for i in range(60):  # Create 60 providers
+        city, lat, lng = cities[i % len(cities)]
+        service = services[i % len(services)]
+        business_type = business_types[i % len(business_types)]
+        
+        provider_data = {
+            "id": str(uuid.uuid4()),
+            "business_name": f"{business_type} {service.split()[0]} Services {i+1}",
+            "description": f"Professional {service.lower()} with over {5 + i%15} years of experience. Licensed, insured, and highly rated by customers.",
+            "services": [service],
+            "location": city,
+            "latitude": lat + (i%10 - 5) * 0.01,
+            "longitude": lng + (i%10 - 5) * 0.01,
+            "phone": f"({200 + i//10}) 555-{1000 + i:04d}",
+            "email": f"contact@provider{i+1}.com",
+            "website": f"https://provider{i+1}.com",
+            "google_rating": round(4.0 + (i % 10) * 0.1, 1),
+            "google_reviews_count": 50 + i * 10,
+            "website_rating": round(3.9 + (i % 9) * 0.1, 1),
+            "verified": i % 3 == 0
+        }
+        sample_providers.append(provider_data)
+        
+        # Create provider user accounts for first 10 providers
+        if i < 10:
+            provider_user = {
+                "id": str(uuid.uuid4()),
+                "email": f"provider{i+1}@bidme.com",
+                "phone": provider_data["phone"],
+                "password_hash": get_password_hash("providerpassword"),
+                "roles": ["customer", "provider"],
+                "first_name": provider_data["business_name"].split()[0],
+                "last_name": "Provider",
+                "is_verified": True,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            }
+            await db.users.insert_one(provider_user)
+            provider_users.append(provider_user)
+    
+    # Insert all providers
     for provider_data in sample_providers:
-        provider_data["id"] = str(uuid.uuid4())
         provider = ServiceProvider(**provider_data)
         await db.service_providers.insert_one(provider.dict())
     
-    # Add service requests
-    request_map = {}  # Map titles to IDs for bids
-    for request_data in sample_requests:
-        request_data["user_id"] = demo_user_id
-        request_data["id"] = str(uuid.uuid4())
-        request_data["created_at"] = datetime.utcnow()
-        request_data["updated_at"] = datetime.utcnow()
+    # Create 50+ service requests with images
+    sample_requests = []
+    request_titles = [
+        "Emergency Plumbing - Kitchen Sink Leak",
+        "Website Development for New Restaurant", 
+        "Logo Design and Branding Package",
+        "Kitchen Renovation - Full Remodel",
+        "Personal Training - Weight Loss Program",
+        "Business Tax Preparation and Consulting",
+        "Wedding Photography - June 2025",
+        "House Cleaning Service - Weekly",
+        "Mobile App Development - Fitness Tracker",
+        "Corporate Event Planning - Company Retreat",
+        "Bathroom Remodel with Modern Fixtures",
+        "Social Media Marketing Campaign",
+        "Interior Design for Living Room",
+        "HVAC System Installation",
+        "Legal Contract Review Services",
+        "Professional Headshot Photography",
+        "Garden Landscaping and Design",
+        "Computer Repair and Upgrade",
+        "Voice-over Recording Services",
+        "Pet Grooming and Training"
+    ]
+    
+    descriptions = [
+        "URGENT: Kitchen sink is leaking badly and flooding the floor. Need immediate repair!",
+        "Need a professional website with online ordering, menu display, and mobile optimization.",
+        "Startup needs complete brand identity: logo, business cards, letterhead, guidelines.",
+        "Complete kitchen remodel: cabinets, countertops, appliances, flooring, electrical.",
+        "Looking for certified personal trainer for weight loss. 3 sessions/week for 3 months.",
+        "Small business needs comprehensive tax prep for 2024 plus quarterly estimates for 2025.",
+        "Seeking experienced wedding photographer for outdoor ceremony. Full day coverage needed.",
+        "Need reliable weekly cleaning for 3BR/2BA home. Eco-friendly products preferred.",
+        "Looking for mobile app developers for iOS/Android fitness tracking app with wearables.",
+        "Planning 2-day company retreat for 50 employees. Need venue, catering, activities.",
+        "Master bathroom renovation with walk-in shower, double vanity, modern fixtures.",
+        "Small business needs comprehensive social media strategy and content creation.",
+        "Interior design consultation for living room makeover. Modern, comfortable style.",
+        "Central air conditioning installation for 2-story home. Energy efficient system.",
+        "Business contracts and agreements need professional legal review and updates.",
+        "Professional headshot photography for corporate website and LinkedIn profiles.",
+        "Front and backyard landscaping with native plants and irrigation system.",
+        "Desktop computer running slow, needs upgrade and virus removal. Data backup needed.",
+        "Professional voice-over for commercial and training video production.",
+        "Monthly pet grooming and basic obedience training for golden retriever."
+    ]
+    
+    for i in range(55):  # Create 55 requests
+        base_index = i % len(request_titles)
+        title = request_titles[base_index]
+        if i >= len(request_titles):
+            title += f" #{i - base_index + 1}"
+            
+        description = descriptions[base_index]
+        if i >= len(descriptions):
+            description = f"Professional service request #{i+1}. {description}"
         
+        # Add images to some requests
+        request_images = []
+        if i % 3 == 0:  # Every 3rd request has images
+            num_images = (i % 3) + 1
+            request_images = sample_images[:num_images]
+        
+        request_data = {
+            "id": str(uuid.uuid4()),
+            "user_id": demo_user_id,
+            "title": title,
+            "description": description,
+            "category": services[i % len(services)],
+            "budget_min": float(100 + i * 50),
+            "budget_max": float(200 + i * 100),
+            "deadline": datetime.utcnow() + timedelta(days=1 + i%30) if i % 4 != 0 else None,
+            "location": cities[i % len(cities)][0],
+            "status": ["open", "open", "open", "in_progress", "completed"][i % 5],
+            "show_best_bids": i % 2 == 0,
+            "images": request_images,
+            "created_at": datetime.utcnow() - timedelta(days=i%10),
+            "updated_at": datetime.utcnow()
+        }
+        sample_requests.append(request_data)
+    
+    # Insert all requests
+    request_map = {}
+    for request_data in sample_requests:
         request_map[request_data["title"]] = request_data["id"]
         request = ServiceRequest(**request_data)
         await db.service_requests.insert_one(request.dict())
     
-    # Add sample bids
-    for bid_data in sample_bids:
-        # Find matching provider user
-        provider_user = None
-        for pu in provider_users:
-            if bid_data["provider_name"] in pu["first_name"]:
-                provider_user = pu
-                break
-        
-        if not provider_user:
-            provider_user = provider_users[0]  # Fallback
-        
-        request_id = request_map.get(bid_data["service_request_title"])
-        if request_id:
-            bid = {
-                "id": str(uuid.uuid4()),
-                "service_request_id": request_id,
-                "provider_id": provider_user["id"],
-                "provider_name": bid_data["provider_name"],
-                "price": bid_data["price"],
-                "proposal": bid_data["proposal"],
-                "start_date": bid_data["start_date"],
-                "duration_days": bid_data["duration_days"],
-                "duration_description": bid_data["duration_description"],
-                "status": bid_data["status"],
-                "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
-            }
-            await db.bids.insert_one(bid)
+    # Create bids for first 20 requests
+    bid_count = 0
+    for i, request_data in enumerate(sample_requests[:20]):
+        if request_data["status"] == "open":
+            # Add 2-4 bids per open request
+            num_bids = 2 + (i % 3)
+            for j in range(num_bids):
+                if j < len(provider_users):
+                    provider_user = provider_users[j % len(provider_users)]
+                    
+                    bid = {
+                        "id": str(uuid.uuid4()),
+                        "service_request_id": request_data["id"],
+                        "provider_id": provider_user["id"],
+                        "provider_name": f"{provider_user['first_name']} {provider_user['last_name']}",
+                        "price": request_data["budget_min"] + (j * 50) + (i * 25),
+                        "proposal": f"I can complete this {request_data['category'].lower()} project with high quality. {5 + j} years experience, excellent references available.",
+                        "start_date": datetime.utcnow() + timedelta(days=1 + j),
+                        "duration_days": 1 + j*2,
+                        "duration_description": ["Same day", "1-2 days", "2-3 days", "1 week"][j % 4],
+                        "status": "accepted" if (i == 2 and j == 0) else "pending",
+                        "created_at": datetime.utcnow() - timedelta(hours=i*2 + j),
+                        "updated_at": datetime.utcnow()
+                    }
+                    await db.bids.insert_one(bid)
+                    bid_count += 1
     
-    print(f"✅ Initialized comprehensive sample data:")
+    print(f"✅ Initialized comprehensive BidMe sample data:")
     print(f"   - {len(sample_providers)} service providers")
-    print(f"   - {len(sample_requests)} service requests")
-    print(f"   - {len(sample_bids)} sample bids")
+    print(f"   - {len(sample_requests)} service requests (with images)")
+    print(f"   - {bid_count} sample bids")
     print(f"   - Demo customer: demo@bidme.com / demopassword")
-    print(f"   - Provider accounts: provider1@bidme.com / providerpassword")
+    print(f"   - Provider accounts: provider1@bidme.com through provider10@bidme.com / providerpassword")
 
 async def create_database_indexes():
     """Create database indexes for improved query performance"""
