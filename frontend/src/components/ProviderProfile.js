@@ -23,9 +23,11 @@ const ProviderProfile = () => {
   });
 
   useEffect(() => {
-    if (user?.role === 'provider') {
+    if (user?.roles?.includes('provider') || user?.role === 'provider') {
       fetchProfile();
       fetchCategories();
+    } else {
+      setLoading(false);
     }
   }, [user]);
 
