@@ -28,7 +28,7 @@ const Dashboard = () => {
   useEffect(() => {
     fetchDashboardData();
     fetchCategories();
-  }, []);
+  }, [location.pathname]); // Refresh when navigating to dashboard
 
   // Add effect to refresh dashboard when navigating back
   useEffect(() => {
