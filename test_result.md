@@ -432,9 +432,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Dashboard Count Updates"
     - "Service Request Form Integration"
-    - "AI-Driven Category Selection"
     - "Form Field Reordering"
   stuck_tasks:
     - "Sample Data Initialization Enhancement"
