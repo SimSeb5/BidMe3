@@ -33,10 +33,14 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
+      const userRoles = user.roles || [user.role]; // Support both old and new format
+      const isCustomer = userRoles.includes('customer');
+      const isProvider = userRoles.includes('provider');
+      
       const [requestsResponse, myRequestsResponse, myBidsResponse] = await Promise.all([
         axios.get(`${API}/service-requests?status=open`),
-        user.role === 'customer' ? axios.get(`${API}/my-requests`) : Promise.resolve({ data: [] }),
-        user.role === 'provider' ? axios.get(`${API}/my-bids`) : Promise.resolve({ data: [] })
+        isCustomer ? axios.get(`${API}/my-requests`) : Promise.resolve({ data: [] }),
+        isProvider ? axios.get(`${API}/my-bids`) : Promise.resolve({ data: [] })
       ]);
 
       setStats({
