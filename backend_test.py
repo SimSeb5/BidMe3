@@ -682,11 +682,17 @@ def main():
     
     tester = ServiceConnectAPITester()
     
-    # Basic endpoint tests
+    # Basic endpoint tests (PUBLIC ACCESS)
+    print("\n📋 Testing Public Endpoints...")
     tester.test_root_endpoint()
     tester.test_categories()
     
+    # Test public access to service requests
+    tester.test_get_service_requests()
+    tester.test_get_service_requests_by_category()
+    
     # Authentication tests
+    print("\n🔐 Testing Authentication...")
     if not tester.test_customer_registration():
         print("❌ Customer registration failed, stopping tests")
         return 1
@@ -699,22 +705,41 @@ def main():
     tester.test_auth_me_customer()
     tester.test_auth_me_provider()
     
+    # NEW: Dual Role System Tests
+    print("\n👥 Testing Dual Role System...")
+    if not tester.test_dual_role_registration():
+        print("❌ Dual role registration failed")
+        return 1
+    
+    tester.test_add_provider_role()
+    tester.test_add_customer_role_to_provider()
+    tester.test_get_user_roles()
+    tester.test_dual_role_functionality()
+    
+    # NEW: Image Upload Tests
+    print("\n🖼️  Testing Image Upload...")
+    tester.test_image_upload()
+    
     # Service request tests
+    print("\n📝 Testing Service Requests...")
     if not tester.test_create_service_request():
         print("❌ Service request creation failed, stopping related tests")
         return 1
     
-    tester.test_get_service_requests()
-    tester.test_get_service_requests_by_category()
+    # NEW: Service request with images
+    tester.test_service_request_with_images()
+    
     tester.test_get_service_request_detail()
     tester.test_get_my_requests()
     
     # Provider profile tests
+    print("\n👔 Testing Provider Profiles...")
     tester.test_create_provider_profile()
     tester.test_get_provider_profile()
     tester.test_update_provider_profile()
     
     # Bidding tests
+    print("\n💰 Testing Bidding System...")
     if not tester.test_create_bid():
         print("❌ Bid creation failed, stopping bid-related tests")
         return 1
@@ -724,12 +749,14 @@ def main():
     tester.test_get_my_bids()
     
     # Bid messaging tests
+    print("\n💬 Testing Bid Messaging...")
     tester.test_create_bid_message_from_provider()
     tester.test_create_bid_message_from_customer()
     tester.test_get_bid_messages_as_provider()
     tester.test_get_bid_messages_as_customer()
     
     # Error case tests
+    print("\n⚠️  Testing Error Cases...")
     tester.test_error_cases()
     
     # Print final results
