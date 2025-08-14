@@ -276,7 +276,7 @@ async def login(user_credentials: UserLogin):
 @api_router.get("/auth/me")
 async def get_current_user_info(current_user: dict = Depends(get_current_user)):
     current_user.pop("password_hash", None)
-    return current_user
+    return serialize_mongo_doc(current_user)
 
 # Service Request Routes
 @api_router.post("/service-requests", response_model=ServiceRequest)
