@@ -51,19 +51,24 @@ const PublicHome = () => {
 
   const getCategoryIcon = (category) => {
     const icons = {
-      'Home Services': '🏠',
-      'Construction & Renovation': '🔨',
+      'Home Services': '🏘️',
+      'Construction & Renovation': '🏗️',
       'Professional Services': '💼',
       'Technology & IT': '💻',
       'Creative & Design': '🎨',
       'Business Services': '📊',
       'Health & Wellness': '🏥',
       'Education & Training': '📚',
-      'Transportation': '🚗',
-      'Events & Entertainment': '🎉',
-      'Other': '⚡'
+      'Transportation': '🚛',
+      'Events & Entertainment': '🎭',
+      'Emergency Services': '🚨',
+      'Automotive': '🚗',
+      'Beauty & Personal Care': '💅',
+      'Pet Services': '🐕',
+      'Financial Services': '💳',
+      'Other': '⚙️'
     };
-    return icons[category] || '⚡';
+    return icons[category] || '⚙️';
   };
 
   const renderStarRating = (rating) => {
