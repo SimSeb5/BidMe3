@@ -403,7 +403,7 @@ async def get_my_bids(current_user: dict = Depends(get_current_user)):
 # Provider Profile Routes
 @api_router.post("/provider-profile")
 async def create_provider_profile(profile_data: ProviderProfileCreate, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "provider":
+    if "provider" not in current_user.get("roles", []):
         raise HTTPException(status_code=403, detail="Only providers can create profiles")
     
     # Check if profile already exists
@@ -417,7 +417,7 @@ async def create_provider_profile(profile_data: ProviderProfileCreate, current_u
 
 @api_router.get("/provider-profile")
 async def get_my_provider_profile(current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "provider":
+    if "provider" not in current_user.get("roles", []):
         raise HTTPException(status_code=403, detail="Only providers can view profiles")
     
     profile = await db.provider_profiles.find_one({"user_id": current_user["id"]})
@@ -428,7 +428,7 @@ async def get_my_provider_profile(current_user: dict = Depends(get_current_user)
 
 @api_router.put("/provider-profile")
 async def update_provider_profile(profile_data: ProviderProfileCreate, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "provider":
+    if "provider" not in current_user.get("roles", []):
         raise HTTPException(status_code=403, detail="Only providers can update profiles")
     
     profile = await db.provider_profiles.find_one({"user_id": current_user["id"]})
@@ -445,6 +445,52 @@ async def update_provider_profile(profile_data: ProviderProfileCreate, current_u
     
     updated_profile = await db.provider_profiles.find_one({"user_id": current_user["id"]})
     return serialize_mongo_doc(updated_profile)
+
+# User Role Management
+@api_router.post("/user/add-role")
+async def add_user_role(role_data: dict, current_user: dict = Depends(get_current_user)):
+    """Add a new role to user (customer can become provider and vice versa)"""
+    new_role = role_data.get("role")
+    if new_role not in ["customer", "provider"]:
+        raise HTTPException(status_code=400, detail="Invalid role")
+    
+    current_roles = current_user.get("roles", [])
+    if new_role not in current_roles:
+        current_roles.append(new_role)
+        
+        await db.users.update_one(
+            {"id": current_user["id"]},
+            {"$set": {"roles": current_roles, "updated_at": datetime.utcnow()}}
+        )
+    
+    updated_user = await db.users.find_one({"id": current_user["id"]})
+    return serialize_mongo_doc(updated_user)
+
+@api_router.get("/user/roles")
+async def get_user_roles(current_user: dict = Depends(get_current_user)):
+    """Get current user's roles"""
+    return {"roles": current_user.get("roles", [])}
+
+# Image upload endpoint
+@api_router.post("/upload-image")
+async def upload_image(file: UploadFile = File(...)):
+    """Upload image and return base64 encoded string"""
+    try:
+        # Read file content
+        contents = await file.read()
+        
+        # Convert to base64
+        import base64
+        encoded_string = base64.b64encode(contents).decode('utf-8')
+        
+        # Return with proper data URL format
+        file_type = file.content_type or 'image/jpeg'
+        data_url = f"data:{file_type};base64,{encoded_string}"
+        
+        return {"image": data_url, "filename": file.filename}
+    
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Image upload failed: {str(e)}")
 
 # Bid Messages (Negotiation)
 @api_router.post("/bid-messages")
