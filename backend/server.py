@@ -1284,6 +1284,169 @@ async def initialize_sample_providers():
             await db.service_providers.insert_one(provider.dict())
         print(f"Initialized {len(sample_providers)} comprehensive service providers")
 
+async def initialize_sample_service_requests():
+    """Initialize the database with realistic sample service requests"""
+    sample_requests = [
+        # Urgent requests
+        {
+            "title": "Emergency Plumbing - Kitchen Sink Leak",
+            "description": "URGENT: My kitchen sink is leaking badly and flooding the floor. Need immediate plumbing repair. Water is everywhere and I need this fixed ASAP!",
+            "category": "Home Services",
+            "budget_min": 150.0,
+            "budget_max": 400.0,
+            "deadline": datetime.utcnow() + timedelta(days=1),
+            "location": "Manhattan, NY",
+            "status": "open",
+            "show_best_bids": True,
+            "images": []
+        },
+        {
+            "title": "Website Development for New Restaurant",
+            "description": "Need a professional website for my new restaurant opening next month. Must include online ordering, menu display, location info, and mobile-friendly design. Looking for experienced web developers with restaurant industry knowledge.",
+            "category": "Technology & IT",
+            "budget_min": 2000.0,
+            "budget_max": 5000.0,
+            "deadline": datetime.utcnow() + timedelta(days=21),
+            "location": "San Francisco, CA",
+            "status": "open",
+            "show_best_bids": False,
+            "images": []
+        },
+        {
+            "title": "Logo Design and Branding Package",
+            "description": "Startup tech company needs complete brand identity package including logo, business cards, letterhead, and brand guidelines. Looking for modern, professional design that appeals to young professionals.",
+            "category": "Creative & Design",
+            "budget_min": 800.0,
+            "budget_max": 1500.0,
+            "deadline": datetime.utcnow() + timedelta(days=14),
+            "location": "Austin, TX",
+            "status": "open",
+            "show_best_bids": True,
+            "images": []
+        },
+        {
+            "title": "Kitchen Renovation - Full Remodel",
+            "description": "Complete kitchen remodel including cabinets, countertops, appliances, flooring, and electrical work. Kitchen is 200 sq ft. Looking for experienced contractors with excellent references and portfolio of similar work.",
+            "category": "Construction & Renovation",
+            "budget_min": 15000.0,
+            "budget_max": 25000.0,
+            "deadline": datetime.utcnow() + timedelta(days=45),
+            "location": "Los Angeles, CA",
+            "status": "open",
+            "show_best_bids": True,
+            "images": []
+        },
+        {
+            "title": "Personal Training - Weight Loss Program",
+            "description": "Looking for certified personal trainer to help with weight loss goals. Need 3 sessions per week for 3 months. Prefer someone experienced with beginners who can provide nutrition guidance too.",
+            "category": "Health & Wellness",
+            "budget_min": 1200.0,
+            "budget_max": 2000.0,
+            "deadline": datetime.utcnow() + timedelta(days=7),
+            "location": "Denver, CO",
+            "status": "open",
+            "show_best_bids": False,
+            "images": []
+        },
+        {
+            "title": "Business Tax Preparation and Consulting",
+            "description": "Small business needs comprehensive tax preparation for 2024 including quarterly estimates for 2025. Also need advice on business deductions and expense tracking. Looking for CPA or enrolled agent.",
+            "category": "Professional Services",
+            "budget_min": 500.0,
+            "budget_max": 1000.0,
+            "deadline": datetime.utcnow() + timedelta(days=30),
+            "location": "Chicago, IL",
+            "status": "open",
+            "show_best_bids": False,
+            "images": []
+        },
+        {
+            "title": "Wedding Photography - June 2025",
+            "description": "Seeking experienced wedding photographer for outdoor ceremony and reception in June 2025. Need full day coverage (8 hours), engagement photos, and digital gallery with editing. Portfolio required.",
+            "category": "Creative & Design",
+            "budget_min": 2500.0,
+            "budget_max": 4000.0,
+            "deadline": datetime.utcnow() + timedelta(days=60),
+            "location": "Miami, FL",
+            "status": "open",
+            "show_best_bids": True,
+            "images": []
+        },
+        {
+            "title": "House Cleaning Service - Weekly",
+            "description": "Need reliable house cleaning service for 3-bedroom, 2-bathroom home. Looking for weekly cleaning with eco-friendly products. Must be insured and bonded with good references.",
+            "category": "Home Services",
+            "budget_min": 100.0,
+            "budget_max": 200.0,
+            "deadline": None,
+            "location": "Seattle, WA",
+            "status": "open",
+            "show_best_bids": False,
+            "images": []
+        },
+        {
+            "title": "Mobile App Development - Fitness Tracker",
+            "description": "Looking for mobile app developers to create iOS and Android fitness tracking app. Features needed: workout logging, progress tracking, social sharing, integration with wearables. Need full development and deployment.",
+            "category": "Technology & IT",
+            "budget_min": 8000.0,
+            "budget_max": 15000.0,
+            "deadline": datetime.utcnow() + timedelta(days=90),
+            "location": "Boston, MA",
+            "status": "open",
+            "show_best_bids": True,
+            "images": []
+        },
+        {
+            "title": "Corporate Event Planning - Company Retreat",
+            "description": "Planning 2-day company retreat for 50 employees. Need venue selection, catering, activities, transportation, and accommodation coordination. Looking for experienced corporate event planners.",
+            "category": "Events & Entertainment",
+            "budget_min": 5000.0,
+            "budget_max": 10000.0,
+            "deadline": datetime.utcnow() + timedelta(days=35),
+            "location": "San Diego, CA",
+            "status": "open",
+            "show_best_bids": False,
+            "images": []
+        }
+    ]
+
+    # Check if requests already exist
+    existing_count = await db.service_requests.count_documents({})
+    if existing_count < 5:  # Only add if we have very few requests
+        # Create a sample user first
+        sample_user = {
+            "id": str(uuid.uuid4()),
+            "email": "demo@serviceconnect.com",
+            "phone": "(555) 000-0000",
+            "password_hash": get_password_hash("demopassword"),
+            "roles": ["customer"],
+            "first_name": "Demo",
+            "last_name": "User",
+            "is_verified": True,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        # Check if demo user already exists
+        existing_user = await db.users.find_one({"email": "demo@serviceconnect.com"})
+        if not existing_user:
+            await db.users.insert_one(sample_user)
+            user_id = sample_user["id"]
+        else:
+            user_id = existing_user["id"]
+        
+        # Add sample requests with the demo user
+        for request_data in sample_requests:
+            request_data["user_id"] = user_id
+            request_data["id"] = str(uuid.uuid4())
+            request_data["created_at"] = datetime.utcnow()
+            request_data["updated_at"] = datetime.utcnow()
+            
+            request = ServiceRequest(**request_data)
+            await db.service_requests.insert_one(request.dict())
+        
+        print(f"Initialized {len(sample_requests)} sample service requests")
+
 # Clear test data endpoint (for development)
 @api_router.post("/admin/clear-test-data")
 async def clear_test_data():
