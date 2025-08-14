@@ -237,7 +237,7 @@ async def register(user_data: UserCreate):
         email=user_data.email,
         phone=user_data.phone,
         password_hash=hashed_password,
-        role=user_data.role,
+        roles=[user_data.role],  # Convert single role to list
         first_name=user_data.first_name,
         last_name=user_data.last_name
     )
