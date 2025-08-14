@@ -347,6 +347,79 @@ const ManageRequests = () => {
           </div>
         )}
 
+        {/* Status Update Modal */}
+        {showStatusModal && (
+          <div className="modal-overlay" onClick={() => setShowStatusModal(null)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2 className="text-xl font-semibold">Update Request Status</h2>
+                <button onClick={() => setShowStatusModal(null)} className="text-gray-500 hover:text-gray-700">
+                  ✕
+                </button>
+              </div>
+              
+              <div className="modal-body">
+                <div className="mb-4">
+                  <h3 className="font-semibold text-gray-900 mb-2">{showStatusModal.title}</h3>
+                  <p className="text-sm text-gray-600">Current Status: <span className={`badge ${getStatusBadge(showStatusModal.status).split(' ')[1]}`}>{showStatusModal.status.replace('_', ' ')}</span></p>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900">Select New Status:</h4>
+                  
+                  <div className="grid grid-2 gap-3">
+                    {showStatusModal.status !== 'open' && (
+                      <button
+                        onClick={() => handleUpdateStatus(showStatusModal.id, 'open')}
+                        className="status-option btn btn-success"
+                      >
+                        📢 Open
+                        <span className="text-xs">Accept new bids</span>
+                      </button>
+                    )}
+
+                    {showStatusModal.status !== 'in_progress' && (
+                      <button
+                        onClick={() => handleUpdateStatus(showStatusModal.id, 'in_progress')}
+                        className="status-option btn btn-warning"
+                      >
+                        🔄 In Progress
+                        <span className="text-xs">Work is happening</span>
+                      </button>
+                    )}
+
+                    {showStatusModal.status !== 'completed' && (
+                      <button
+                        onClick={() => handleUpdateStatus(showStatusModal.id, 'completed')}
+                        className="status-option btn btn-info"
+                      >
+                        ✅ Completed
+                        <span className="text-xs">Work is finished</span>
+                      </button>
+                    )}
+
+                    {showStatusModal.status !== 'cancelled' && (
+                      <button
+                        onClick={() => handleUpdateStatus(showStatusModal.id, 'cancelled')}
+                        className="status-option btn btn-error"
+                      >
+                        ❌ Cancelled
+                        <span className="text-xs">Request cancelled</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="modal-footer">
+                <button onClick={() => setShowStatusModal(null)} className="btn btn-secondary">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Edit Modal */}
         {editingRequest && (
           <div className="modal-overlay" onClick={() => setEditingRequest(null)}>
