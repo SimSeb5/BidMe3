@@ -1,8 +1,4 @@
 import React, { useState, useCallback, useRef } from 'react';
-import axios from 'axios';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const ImageUpload = ({ images, setImages, maxImages = 5 }) => {
   const [uploading, setUploading] = useState(false);
@@ -53,7 +49,7 @@ const ImageUpload = ({ images, setImages, maxImages = 5 }) => {
           reader.readAsDataURL(file);
         });
 
-        // Simulate server upload with the base64 data
+        // Processing complete
         setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
         newImages.push(base64);
         
@@ -91,7 +87,6 @@ const ImageUpload = ({ images, setImages, maxImages = 5 }) => {
 
   const handleDragLeave = useCallback((e) => {
     e.preventDefault();
-    // Only remove drag over if we're leaving the entire drop zone
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX;
     const y = e.clientY;
@@ -144,7 +139,7 @@ const ImageUpload = ({ images, setImages, maxImages = 5 }) => {
             multiple
             accept="image/jpeg,image/png,image/gif"
             onChange={handleFileSelect}
-            className="file-input hidden"
+            style={{ display: 'none' }}
             disabled={uploading || images.length >= maxImages}
           />
         </div>
@@ -162,7 +157,7 @@ const ImageUpload = ({ images, setImages, maxImages = 5 }) => {
                       style={{ width: `${progress}%` }}
                     ></div>
                   </div>
-                  <span className="text-xs">{fileName} ({progress}%)</span>
+                  <span className="text-xs">{fileName.substring(0, 20)}... ({progress}%)</span>
                 </div>
               ))}
             </div>
@@ -172,7 +167,7 @@ const ImageUpload = ({ images, setImages, maxImages = 5 }) => {
 
       {/* Image Preview Grid */}
       {images.length > 0 && (
-        <div className="image-preview-grid">
+        <div className="image-preview-grid mt-4">
           <h4 className="text-sm font-semibold text-gray-700 mb-3">
             Uploaded Images ({images.length}/{maxImages})
           </h4>
@@ -182,9 +177,9 @@ const ImageUpload = ({ images, setImages, maxImages = 5 }) => {
                 <img 
                   src={image} 
                   alt={`Upload ${index + 1}`} 
-                  className="w-full h-24 object-cover rounded-lg"
+                  className="w-full h-24 object-cover rounded-lg border"
                   onError={(e) => {
-                    e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIxIDlWN0MxOSA1IDE3IDUgMTcgNUg3QzUgNSAzIDUgMyA3VjE3QzMgMTkgNSAxOSA1IDE5SDE3QzE5IDE5IDIxIDE5IDIxIDE3VjlaSDE5VjE3SDE3VjE5SDE5VjE3SDIxWiIgZmlsbD0iI0VGNEVGRiIvPgo8L3N2Zz4K';
+                    e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9Im5vbmUiPjxyZWN0IHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iI0Y3RjhGQSIvPjx0ZXh0IHg9IjUiIHk9IjE1IiBmb250LXNpemU9IjEwIiBmaWxsPSIjNkI3MjgwIj5JbWFnZTwvdGV4dD48L3N2Zz4=';
                   }}
                 />
                 <button
@@ -193,7 +188,7 @@ const ImageUpload = ({ images, setImages, maxImages = 5 }) => {
                     e.stopPropagation();
                     removeImage(index);
                   }}
-                  className="remove-image-btn absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400"
                   title="Remove image"
                 >
                   ×
@@ -208,82 +203,18 @@ const ImageUpload = ({ images, setImages, maxImages = 5 }) => {
       <div className="upload-info mt-3">
         <div className="flex justify-between items-center text-sm">
           <span className="text-gray-600">
-            {images.length}/{maxImages} images • {5 - images.length} remaining
+            {images.length}/{maxImages} images • {maxImages - images.length} remaining
           </span>
-          {images.length < maxImages && (
+          {images.length < maxImages && !uploading && (
             <button
               type="button"
               onClick={triggerFileSelect}
               className="btn btn-outline btn-sm"
-              disabled={uploading}
             >
               + Add More
             </button>
           )}
         </div>
-      </div>
-    </div>
-  );
-};
-
-export default ImageUpload;
-
-  return (
-    <div className="image-upload-container">
-      {/* Upload Area */}
-      <div
-        className={`image-upload-area ${dragOver ? 'drag-over' : ''}`}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-      >
-        <div className="upload-content">
-          <div className="upload-icon">📷</div>
-          <h3>Add Images to Your Request</h3>
-          <p>Drag and drop images here, or click to select files</p>
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleFileSelect}
-            className="file-input"
-            disabled={uploading || images.length >= maxImages}
-          />
-        </div>
-        
-        {uploading && (
-          <div className="upload-overlay">
-            <div className="spinner"></div>
-            <p>Uploading images...</p>
-          </div>
-        )}
-      </div>
-
-      {/* Image Preview Grid */}
-      {images.length > 0 && (
-        <div className="image-preview-grid">
-          {images.map((image, index) => (
-            <div key={index} className="image-preview">
-              <img src={image} alt={`Upload ${index + 1}`} />
-              <button
-                type="button"
-                onClick={() => removeImage(index)}
-                className="remove-image-btn"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="upload-info">
-        <p className="text-sm text-gray-600">
-          {images.length}/{maxImages} images uploaded
-        </p>
-        <p className="text-xs text-gray-500">
-          Supported formats: JPG, PNG, GIF. Max file size: 5MB per image.
-        </p>
       </div>
     </div>
   );
